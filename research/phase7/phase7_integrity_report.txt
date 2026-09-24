@@ -1,0 +1,11 @@
+PHASE 7 FINAL INTEGRITY REPORT
+
+raw_rows=4000
+unique_reps=500
+unique_cells=4
+fit_specs=['M1', 'M2']
+block_manifests=10
+all_block_integrity_pass=True
+M1_M2_dataset_sha_pairing=True
+expected_total_fits=4000
+integrity_pass=True
