@@ -1,0 +1,5 @@
+relationship,correlation
+model self proportion vs model X mean,0.9756623268604155
+model self proportion vs model context mean,0.002614605100238508
+model self proportion vs model outcome mean,0.6114815408862111
+within-model self information vs self proportion,-0.0038331613311771
