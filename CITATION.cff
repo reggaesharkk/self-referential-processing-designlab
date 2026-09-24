@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the OSF master record."
+title: "Self-Referential Processing in Large Language Models: Design Lab and Validation Program"
+type: software
+authors:
+  - family-names: "Upadhyay"
+    given-names: "Prince"
+date-released: "2026-09-24"
+version: "1.0.0"
+doi: "10.17605/OSF.IO/NV7DZ"
+repository-code: "https://github.com/reggaesharkk/self-referential-processing-designlab"
+license: "CC-BY-4.0"
