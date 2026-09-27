@@ -1,0 +1,27 @@
+{
+  "schema": "v8.6.3-offline-readiness-v1",
+  "root": "/mnt/data/v863_stage",
+  "network_calls": 0,
+  "credentials_read": false,
+  "confirmatory_data_collected": false,
+  "checks": [
+    {"check":"master_lock_content","status":"PASS","detail":"required v8.6.3 operational markers present","sha256":"b3394f637a73ffe835866862d4781cb8928e137c586bd8d79241d9c3713ccbbf"},
+    {"check":"item_pool","status":"PASS","detail":"frozen SHA-256 and 260-item schema verified","sha256":"128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3"},
+    {"check":"review_source_phase0_pipeline.py","status":"PASS","detail":"present","sha256":"cc9e2caafe3de68dd7799ae4871daf16cb5fc334b91aa1cca03501e39d44de27"},
+    {"check":"review_source_collect_gate5.py","status":"PASS","detail":"present","sha256":"54ca30ef38e2608dca647036d2a48c23d7042159f69b4a8dd9689a7f67df06bd"},
+    {"check":"review_source_make_frozen.py","status":"PASS","detail":"present","sha256":"fb4b1683f574b7e69e34efe4a1391ffcd20c961401d25089b25c69d46618b534"},
+    {"check":"review_phase0_exact_utility","status":"PASS","detail":"review Phase 0 enforces exact Yi utility and has no mock fallback"},
+    {"check":"review_collector_fail_closed","status":"PASS","detail":"review collector requires resolved 20-slot bindings, uses 16-token candidate call, and keeps confirmatory launch disabled"},
+    {"check":"roster_bindings","status":"BLOCKED","detail":"roster_bindings.json missing; only unresolved template is present"},
+    {"check":"closed_api_targets","status":"BLOCKED","detail":"openai_flagship: unresolved requested_id; openai_lightweight: unresolved requested_id; anthropic_flagship: unresolved requested_id; anthropic_lightweight: unresolved requested_id; google_flagship: unresolved requested_id; google_lightweight: unresolved requested_id; cohere_flagship: unresolved requested_id; mistral_flagship: unresolved requested_id"},
+    {"check":"closed_endpoint_resolution","status":"BLOCKED","detail":"missing manual evidence record for original snapshot vs same-vendor successor and OSF amendment status"},
+    {"check":"legacy_ping_safety","status":"WARN","detail":"archived api_ping_check.py can serialize a Google key in the endpoint URL; preserve it for provenance but do not execute with live Gemini credentials"},
+    {"check":"safe_ping_replacement","status":"PASS","detail":"credential-safe replacement present"},
+    {"check":"api_ping_check_result","status":"BLOCKED","detail":"api_ping_check.json missing; no registered 8-cell availability evidence"},
+    {"check":"runtime_lock","status":"BLOCKED","detail":"runtime_lock.json missing"},
+    {"check":"runtime_freeze_inputs","status":"BLOCKED","detail":"missing: ['runlog.py', 'roster_bindings.json', 'api_ping_check.json', 'runtime_lock.json']"}
+  ],
+  "blockers":["roster_bindings","closed_api_targets","closed_endpoint_resolution","api_ping_check_result","runtime_lock","runtime_freeze_inputs"],
+  "warnings":["legacy_ping_safety"],
+  "status":"BLOCKED"
+}

@@ -1,0 +1,22 @@
+{
+  "1": {"canonical":"Meta-Llama-3.1-8B-Instruct","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "2": {"canonical":"Meta-Llama-3.1-70B-Instruct","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "3": {"canonical":"Meta-Llama-3.1-405B-Instruct","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "4": {"canonical":"Meta-Llama-3.3-70B-Instruct","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "5": {"canonical":"Qwen2.5-7B-Instruct","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "6": {"canonical":"Qwen2.5-32B-Instruct","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "7": {"canonical":"Qwen2.5-72B-Instruct","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "8": {"canonical":"Mistral-7B-Instruct-v0.3","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "9": {"canonical":"Mixtral-8x22B-Instruct-v0.1","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "10":{"canonical":"Gemma-2-9b-it","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "11":{"canonical":"Gemma-2-27b-it","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "12":{"canonical":"DeepSeek-V2.5","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "13":{"canonical":"openai_flagship","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "14":{"canonical":"openai_lightweight","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "15":{"canonical":"anthropic_flagship","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "16":{"canonical":"anthropic_lightweight","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "17":{"canonical":"google_flagship","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "18":{"canonical":"google_lightweight","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "19":{"canonical":"cohere_flagship","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"},
+  "20":{"canonical":"mistral_flagship","id":"REPLACE_WITH_VERIFIED_SNAPSHOT","endpoint":"REPLACE_WITH_VERIFIED_ENDPOINT","revision":"REPLACE_WITH_PINNED_REVISION","verification_evidence":"REPLACE_WITH_EVIDENCE_REFERENCE"}
+}
