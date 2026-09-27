@@ -1,0 +1,46 @@
+{
+  "schema": "v8.6.3-operational-runtime-lock-v1",
+  "protocol": "v8.6.3",
+  "note": "Operational evidence only. This file does not amend MASTER_LOCK_v8_6_3.md.",
+  "utility": {
+    "canonical_model": "Yi-1.5-34B-Chat",
+    "model_id": "Yi-1.5-34B-Chat",
+    "engine": "vLLM",
+    "deployment_mode": "local",
+    "weights_revision": "REPLACE_WITH_EXACT_WEIGHTS_REVISION",
+    "weights_verification": "REPLACE_WITH_HASH_OR_PINNED_SOURCE_REVISION",
+    "endpoint": "REPLACE_WITH_LOCAL_VLLM_ENDPOINT",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 256,
+    "verification_evidence": "REPLACE_WITH_LOCAL_PREFLIGHT_EVIDENCE"
+  },
+  "candidate_decoding": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 16,
+    "identical_retry_limit": 1,
+    "sdk_automatic_retries": false
+  },
+  "context_length": {
+    "tokenizer": "cl100k_base",
+    "tokenizer_package_version": "REPLACE_WITH_VERSION",
+    "measurement_scope": "REPLACE_AFTER_FINAL_SCOPE_CONFIRMATION"
+  },
+  "software": {
+    "python": "REPLACE_WITH_VERSION",
+    "vllm": "REPLACE_WITH_VERSION",
+    "tiktoken": "REPLACE_WITH_VERSION",
+    "provider_sdk_or_adapter_versions": "REPLACE_WITH_VERSION_MAP"
+  },
+  "adapters": [
+    {
+      "path": "REPLACE_WITH_ADAPTER_OR_LAUNCHER_PATH",
+      "sha256": "REPLACE_WITH_SHA256",
+      "provider_or_role": "REPLACE_WITH_PROVIDER_OR_UTILITY_ROLE"
+    }
+  ],
+  "preflight_evidence": [
+    "REPLACE_WITH_EVIDENCE_FILE_OR_HASH_REFERENCE"
+  ]
+}
