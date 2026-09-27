@@ -33,3 +33,23 @@ evidence that a self-referential processing effect exists.
 
 OSF is the archival/source-of-record layer. This repository is the readable,
 version-controlled technical mirror for code, results, provenance and review.
+
+
+## v8.6.3 operational-readiness snapshot — 27 September 2026
+
+A fail-closed operational audit of the frozen v8.6.3 protocol is now archived
+under [`research/v8_6_3_readiness/`](research/v8_6_3_readiness/).
+
+The frozen scientific specification remains unchanged. The recovered master
+lock and item pool passed the offline integrity checks, the credential-safe
+endpoint checker is preserved, and all 12 open-weight source identities have
+been mapped to pinned source revisions. Final deployment bindings have **not**
+been accepted from catalog aliases alone.
+
+Current status is **PAUSED / BLOCKED** pending completion of the 20-position
+roster bindings, closed-snapshot identity evidence, endpoint availability
+record, runtime lock, and the remaining operational freeze inputs. No
+confirmatory collection has started.
+
+This readiness work is additive provenance. It does not replace the frozen
+v8.6.3 Gate 5 estimator and does not alter the later Phase 7 simulation result.
