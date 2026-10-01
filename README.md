@@ -1,5 +1,8 @@
 # Self-Referential Processing in Large Language Models
 
+> **Rights boundary — effective 1 October 2026:** New author-owned original material first published here from this date is **All Rights Reserved** by default. Earlier express licenses remain in force for the material they cover. Read [the rights policy](RIGHTS_POLICY_2026_10_01.md) and the [shared portfolio evidence standard](https://github.com/reggaesharkk/Reggae-shark-universe-/blob/main/PORTFOLIO_EVIDENCE_AND_RIGHTS_STANDARD_2026_10_01.md).
+
+
 **Prince Upadhyay — Independent Research**
 
 This repository is the specialist GitHub archive for the Self-Referential
