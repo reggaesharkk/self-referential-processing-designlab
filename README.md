@@ -4,7 +4,7 @@
 
 **Prince Upadhyay — Independent Research**
 
-This repository is the specialist GitHub archive for the Self-Referential
+I use this repository as the specialist GitHub archive for my Self-Referential
 Processing research program and its Design Lab validation sequence.
 
 ## Current master record
