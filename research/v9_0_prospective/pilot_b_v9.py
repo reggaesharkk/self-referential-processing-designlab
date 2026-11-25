@@ -28,6 +28,11 @@ EXPECTED_ITEMS_POOL_SHA256 = (
 )
 DEFAULT_BUDGET_USD = 0.25
 MAX_BUDGET_USD = 0.25
+MAX_STYLE_REPAIRS = 2
+STYLE_WORD_MIN = 45
+STYLE_WORD_MAX = 55
+STYLE_WORD_TARGET_MIN = 48
+STYLE_WORD_TARGET_MAX = 52
 MAX_TOKENS = {
     "phase0_harvest": 128,
     "utility_perturb": 128,
@@ -119,21 +124,30 @@ def load_rate_card(path: Path) -> tuple[dict[str, dict[str, Any]], str]:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         raise ValueError("BLOCKED: model_rates_v9.json is missing or invalid") from None
-    if document.get("currency") != "USD" or not isinstance(document.get("models"), dict):
+    if (document.get("currency") != "USD"
+            or document.get("provider") != "openrouter"
+            or not isinstance(document.get("models"), dict)):
         raise ValueError("BLOCKED: rate-card schema is invalid")
+    expected_slots = {spec["slot"] for spec in CANDIDATES}
+    if set(document["models"]) != expected_slots:
+        raise ValueError("BLOCKED: rate-card slots do not match the four candidate slots 1-to-1")
     rates: dict[str, dict[str, Any]] = {}
     for spec in CANDIDATES:
-        row = document["models"].get(spec["provider"])
-        if not isinstance(row, dict) or row.get("model_id") != spec["model_id"]:
-            raise ValueError(f"BLOCKED: no matching rate for {spec['provider']}")
+        slot = spec["slot"]
+        row = document["models"].get(slot)
+        if (not isinstance(row, dict)
+                or row.get("provider") != spec["provider"]
+                or row.get("model_id") != spec["model_id"]):
+            raise ValueError(f"BLOCKED: no matching provider/model rate for slot {slot}")
         try:
             in_rate = float(row["input_usd_per_1m_tokens"])
             out_rate = float(row["output_usd_per_1m_tokens"])
         except (KeyError, TypeError, ValueError):
-            raise ValueError(f"BLOCKED: invalid rate for {spec['provider']}") from None
+            raise ValueError(f"BLOCKED: invalid rate for slot {slot}") from None
         if in_rate < 0 or out_rate < 0:
-            raise ValueError(f"BLOCKED: negative rate for {spec['provider']}")
-        rates[spec["provider"]] = {
+            raise ValueError(f"BLOCKED: negative rate for slot {slot}")
+        rates[slot] = {
+            "provider": spec["provider"],
             "model_id": spec["model_id"],
             "input_usd_per_1m_tokens": in_rate,
             "output_usd_per_1m_tokens": out_rate,
@@ -175,6 +189,7 @@ def run_stage(
     guard: SpendGuard,
     report: dict[str, Any],
     checkpoint: Any,
+    repair_attempt: int = 0,
 ) -> tuple[dict[str, Any], str]:
     output_cap = MAX_TOKENS[stage]
     reserved = guard.reserve(
@@ -186,8 +201,9 @@ def run_stage(
     if reserved is None:
         row = {
             "call_id": f"pilot-{len(report['calls']) + 1:04d}",
+            "slot": spec["slot"],
             "provider": spec["provider"], "model_id": spec["model_id"],
-            "item_id": item_id, "stage": stage,
+            "item_id": item_id, "stage": stage, "repair_attempt": repair_attempt,
             "request_state": "not_started_budget_cap",
             "http_call_started": False, "http_status": None,
             "latency_ms": 0, "available": False,
@@ -204,8 +220,9 @@ def run_stage(
     request_body = _payload(spec, messages, output_cap, None)
     attempt: dict[str, Any] = {
         "call_id": call_id,
+        "slot": spec["slot"],
         "provider": spec["provider"], "model_id": spec["model_id"],
-        "item_id": item_id, "stage": stage,
+        "item_id": item_id, "stage": stage, "repair_attempt": repair_attempt,
         "request_state": "started", "http_call_started": True,
         "started_utc": utc_now(), "http_status": None,
         "prompt_sha256": hashlib.sha256(
@@ -236,7 +253,7 @@ def run_stage(
     if reasoning is not None and reasoning > 0:
         blockers.append("reasoning_tokens_positive")
     word_count = len(text.split()) if stage == "utility_style_scrub" else None
-    if stage == "utility_style_scrub" and not 45 <= (word_count or 0) <= 55:
+    if stage == "utility_style_scrub" and not STYLE_WORD_MIN <= (word_count or 0) <= STYLE_WORD_MAX:
         blockers.append("style_scrub_word_count_out_of_range")
     digit = None
     if stage in {"phase1_digit_evaluation", "domain2_digit_evaluation"}:
@@ -254,12 +271,13 @@ def run_stage(
     )
     row: dict[str, Any] = {
         "call_id": call_id,
+        "slot": spec["slot"],
         "request_state": "http_response_received" if response.get("http_status") is not None else "no_http_response",
         "http_call_started": True,
         "started_utc": attempt["started_utc"],
         "completed_utc": utc_now(),
         "provider": spec["provider"], "model_id": spec["model_id"],
-        "item_id": item_id,
+        "item_id": item_id, "repair_attempt": repair_attempt,
         "stage": stage,
         "http_status": response.get("http_status"),
         "latency_ms": response.get("latency_ms"),
@@ -285,27 +303,91 @@ def run_stage(
     return row, text
 
 
+def run_style_scrub_with_repairs(
+    spec: dict[str, str],
+    api_key: str,
+    item_id: str,
+    prompt: str,
+    perturbed: str,
+    timeout: int,
+    rate: dict[str, Any],
+    guard: SpendGuard,
+    report: dict[str, Any],
+    checkpoint: Any,
+) -> tuple[dict[str, Any], str]:
+    """Run style scrub and allow at most two targeted word-count repairs."""
+    system = (
+        "Neutralize stylistic framing while preserving the answer's utility and facts. "
+        "Write 48 to 52 whitespace-delimited words, which is inside the locked "
+        "45 to 55 word acceptance window. Return only the rewritten text."
+    )
+    row, current = run_stage(
+        spec, api_key, item_id, "utility_style_scrub",
+        _messages(system, "Research item:\n" + prompt + "\n\nPerturbed answer:\n" + perturbed),
+        timeout, rate, guard, report, checkpoint, repair_attempt=0,
+    )
+    for attempt_number in range(1, MAX_STYLE_REPAIRS + 1):
+        if row.get("available"):
+            return row, current
+        if row.get("availability_blockers") != ["style_scrub_word_count_out_of_range"]:
+            return row, current
+
+        current_count = len(current.split())
+        repair_messages = _messages(
+            "This is a length-adjustment repair. Preserve the existing rewrite's meaning, "
+            "task utility, and facts; do not add a new answer. The exact current rewrite "
+            f"contains {current_count} whitespace-delimited words. Adjust it to the "
+            f"{STYLE_WORD_TARGET_MIN}–{STYLE_WORD_TARGET_MAX} word target, preferably 50 words, "
+            f"and remain inside the locked {STYLE_WORD_MIN}–{STYLE_WORD_MAX} word window. "
+            "Return only the revised text.",
+            f"Current rewrite word count: {current_count}. Target: "
+            f"{STYLE_WORD_TARGET_MIN}–{STYLE_WORD_TARGET_MAX} words.\n\n"
+            "Research item:\n" + prompt + "\n\nCurrent rewrite:\n" + current,
+        )
+        row, current = run_stage(
+            spec, api_key, item_id, "utility_style_scrub", repair_messages,
+            timeout, rate, guard, report, checkpoint,
+            repair_attempt=attempt_number,
+        )
+    return row, current
+
+
 def _aggregate(
     calls: list[dict[str, Any]],
     rates: dict[str, dict[str, Any]],
-    items_count: int,
+    item_ids: list[str],
     stopped: bool,
 ) -> list[dict[str, Any]]:
     summaries = []
+    required_stages = set(MAX_TOKENS)
     for spec in CANDIDATES:
-        rows = [c for c in calls if c.get("provider") == spec["provider"]]
+        rows = [c for c in calls if c.get("slot") == spec["slot"]]
         in_values = [c["input_tokens"] for c in rows if c.get("input_tokens") is not None]
         out_values = [c["output_tokens"] for c in rows if c.get("output_tokens") is not None]
-        complete = len(rows) == items_count * 5 and all(c.get("available") for c in rows)
-        rate = rates[spec["provider"]]
+        successful_pairs = {
+            (str(c.get("item_id")), str(c.get("stage")))
+            for c in rows if c.get("available") is True
+        }
+        complete = all(
+            (item_id, stage) in successful_pairs
+            for item_id in item_ids for stage in required_stages
+        )
+        rate = rates[spec["slot"]]
         summaries.append(
             {
+                "slot": spec["slot"],
                 "provider": spec["provider"],
                 "model_id": spec["model_id"],
                 "available": complete,
                 "complete_pipeline": complete,
                 "calls_recorded": len(rows),
-                "calls_expected": items_count * 5,
+                "calls_expected_baseline": len(item_ids) * len(required_stages),
+                "calls_max_with_two_style_repairs": len(item_ids) * (len(required_stages) + MAX_STYLE_REPAIRS),
+                "style_repair_calls": sum(
+                    1 for c in rows
+                    if c.get("stage") == "utility_style_scrub" and int(c.get("repair_attempt") or 0) > 0
+                ),
+                "successful_item_stage_pairs": len(successful_pairs),
                 "input_tokens": sum(in_values),
                 "output_tokens": sum(out_values),
                 "usage_missing_calls": len(rows) - min(len(in_values), len(out_values)),
@@ -343,7 +425,8 @@ def main(argv: list[str] | None = None) -> int:
     if not args.execute:
         print(
             "DRY RUN: frozen pool verified; first five items selected; "
-            "planned calls=100; no keys read and no HTTP requests sent."
+            "baseline calls=100, maximum with style repairs=140; "
+            "no keys read and no HTTP requests sent."
         )
         return 0
     if args.timeout < 1:
@@ -360,7 +443,7 @@ def main(argv: list[str] | None = None) -> int:
     keys = {name: os.environ[name] for name in ENV_BY_PROVIDER.values()}
     guard = SpendGuard(args.budget_usd)
     report: dict[str, Any] = {
-        "schema": "designlab-v9-pilot-b-v1",
+        "schema": "designlab-v9-pilot-b-v2",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "run_classification": "prospective_pilot_b_not_confirmatory_study",
         "confirmatory_data_collected": False,
@@ -380,6 +463,20 @@ def main(argv: list[str] | None = None) -> int:
             "phase0_harvest", "utility_perturb", "utility_style_scrub",
             "phase1_digit_evaluation", "domain2_digit_evaluation",
         ],
+        "candidate_slots": [
+            {"slot": spec["slot"], "provider": spec["provider"], "model_id": spec["model_id"],
+             "endpoint": spec["endpoint"], "auth_env_var": spec["env_var"]}
+            for spec in CANDIDATES
+        ],
+        "baseline_expected_http_calls": len(CANDIDATES) * len(items) * len(MAX_TOKENS),
+        "maximum_http_calls_with_style_repairs": len(CANDIDATES) * len(items) * (len(MAX_TOKENS) + MAX_STYLE_REPAIRS),
+        "style_scrub_repair_policy": {
+            "locked_word_window": [STYLE_WORD_MIN, STYLE_WORD_MAX],
+            "target_word_window": [STYLE_WORD_TARGET_MIN, STYLE_WORD_TARGET_MAX],
+            "maximum_repair_attempts_per_item_and_model": MAX_STYLE_REPAIRS,
+            "repairs_only_when_word_count_is_the_only_blocker": True,
+            "repair_prompt_records_exact_current_word_count": True,
+        },
         "temperature": 0.0,
         "top_p": 1.0,
         "evaluation_max_tokens": 16,
@@ -415,7 +512,7 @@ def main(argv: list[str] | None = None) -> int:
     stopped = False
     try:
         for spec in CANDIDATES:
-            rate = rates[spec["provider"]]
+            rate = rates[spec["slot"]]
             api_key = keys[spec["env_var"]]
             failed = False
             for item in items:
@@ -464,13 +561,8 @@ def main(argv: list[str] | None = None) -> int:
                     failed = True
                     break
 
-                scrub_messages = _messages(
-                    "Neutralize stylistic framing in 45 to 55 whitespace-delimited words. "
-                    "Preserve the perturbed answer's task utility and facts. Return only text.",
-                    "Research item:\n" + prompt + "\n\nPerturbed answer:\n" + perturbed,
-                )
-                row, scrubbed = run_stage(
-                    spec, api_key, item_id, "utility_style_scrub", scrub_messages,
+                row, scrubbed = run_style_scrub_with_repairs(
+                    spec, api_key, item_id, prompt, perturbed,
                     args.timeout, rate, guard, report, checkpoint,
                 )
                 row.update(provider=spec["provider"], model_id=spec["model_id"])
@@ -516,7 +608,7 @@ def main(argv: list[str] | None = None) -> int:
             if stopped:
                 break
             if failed:
-                report.setdefault("provider_failures", []).append(spec["provider"])
+                report.setdefault("provider_failures", []).append(spec["slot"])
     except KeyboardInterrupt:
         report["stopped_early"] = True
         report["halt_reason"] = "interrupted by operator"
@@ -527,7 +619,7 @@ def main(argv: list[str] | None = None) -> int:
             sum(float(c.get("estimated_usd") or 0) for c in report["calls"]), 10
         )
         report["per_model_summary"] = _aggregate(
-            report["calls"], rates, len(items), stopped
+            report["calls"], rates, [str(item["item_id"]) for item in items], stopped
         )
         _save(report, args.output, list(keys.values()))
 

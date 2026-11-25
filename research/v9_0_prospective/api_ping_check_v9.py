@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Credential-safe v9 connectivity and Together logprobs probes.
+"""Credential-safe v9 OpenRouter connectivity probes for prospective work.
 
-This script is a dry-run unless --execute is supplied. Keys come only from
-provider-specific environment variables and are sent only in HTTP headers.
+This script is a dry-run unless --execute is supplied. All four candidate model
+slots use OPENROUTER_API_KEY in an Authorization: Bearer header and the same
+OpenRouter chat/completions endpoint. Probe results are engineering checks,
+not study data.
 """
 from __future__ import annotations
 
@@ -24,32 +26,41 @@ TEMPERATURE = 0.0
 TOP_P = 1.0
 MAX_TOKENS = 16
 TIMEOUT_SECONDS = 30
-ENV_BY_PROVIDER = {
-    "together": "TOGETHER_API_KEY",
-    "groq": "GROQ_API_KEY",
-    "openrouter": "OPENROUTER_API_KEY",
-    "gemini": "GEMINI_API_KEY",
-}
-
-# Google uses the Gemini Developer API to host Gemma here, not Vertex OAuth.
-CANDIDATES = [
-    {"provider": "together", "env_var": ENV_BY_PROVIDER["together"],
-     "model_id": "Qwen/Qwen3.5-9B",
-     "endpoint": "https://api.together.ai/v1/chat/completions", "api_style": "openai"},
-    {"provider": "groq", "env_var": ENV_BY_PROVIDER["groq"],
-     "model_id": "qwen/qwen3.8-27b",
-     "endpoint": "https://api.groq.com/openai/v1/chat/completions", "api_style": "openai"},
-    {"provider": "openrouter", "env_var": ENV_BY_PROVIDER["openrouter"],
-     "model_id": "meta-llama/llama-3.3-70b-instruct",
-     "endpoint": "https://openrouter.ai/api/v1/chat/completions", "api_style": "openai"},
-    {"provider": "gemini", "env_var": ENV_BY_PROVIDER["gemini"],
-     "model_id": "gemma-4-26b-a4b-it",
-     "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent",
-     "api_style": "gemini"},
-]
-LOGPROBS_PROBES = [
-    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    "Qwen/Qwen2.5-72B-Instruct-Turbo",
+OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
+ENV_BY_PROVIDER = {"openrouter": "OPENROUTER_API_KEY"}
+CANDIDATES: list[dict[str, str]] = [
+    {
+        "slot": "qwen_72b",
+        "provider": "openrouter",
+        "env_var": "OPENROUTER_API_KEY",
+        "model_id": "qwen/qwen-2.5-72b-instruct",
+        "endpoint": OPENROUTER_ENDPOINT,
+        "api_style": "openai",
+    },
+    {
+        "slot": "gemma_27b",
+        "provider": "openrouter",
+        "env_var": "OPENROUTER_API_KEY",
+        "model_id": "google/gemma-2-27b-it",
+        "endpoint": OPENROUTER_ENDPOINT,
+        "api_style": "openai",
+    },
+    {
+        "slot": "llama_70b",
+        "provider": "openrouter",
+        "env_var": "OPENROUTER_API_KEY",
+        "model_id": "meta-llama/llama-3.3-70b-instruct",
+        "endpoint": OPENROUTER_ENDPOINT,
+        "api_style": "openai",
+    },
+    {
+        "slot": "mistral_24b",
+        "provider": "openrouter",
+        "env_var": "OPENROUTER_API_KEY",
+        "model_id": "mistralai/mistral-small-24b-instruct-2501",
+        "endpoint": OPENROUTER_ENDPOINT,
+        "api_style": "openai",
+    },
 ]
 KEYLIKE_RE = re.compile(
     r"(?:AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z_-]{20,}|"
@@ -84,28 +95,14 @@ def _finish(value: Any) -> str | None:
 
 
 def normalize_response(provider: str, payload: Any) -> dict[str, Any]:
+    """Extract only redacted response metrics from an OpenAI-compatible reply."""
     out: dict[str, Any] = {
         "raw_text": "", "finish_reason": None, "reasoning_tokens": None,
         "input_tokens": None, "output_tokens": None, "total_tokens": None,
         "logprobs_present": False, "logprobs_token_count": 0,
     }
-    if not isinstance(payload, dict):
+    if provider != "openrouter" or not isinstance(payload, dict):
         return out
-    if provider == "gemini":
-        candidates = payload.get("candidates") or []
-        candidate = candidates[0] if candidates and isinstance(candidates[0], dict) else {}
-        content = candidate.get("content", {})
-        parts = content.get("parts", []) if isinstance(content, dict) else []
-        out["raw_text"] = _text(parts)
-        out["finish_reason"] = _finish(candidate.get("finishReason"))
-        usage = payload.get("usageMetadata", {})
-        if isinstance(usage, dict):
-            out["input_tokens"] = _integer(usage.get("promptTokenCount"))
-            out["output_tokens"] = _integer(usage.get("candidatesTokenCount"))
-            out["total_tokens"] = _integer(usage.get("totalTokenCount"))
-            out["reasoning_tokens"] = _integer(usage.get("thoughtsTokenCount"))
-        return out
-
     choices = payload.get("choices") or []
     choice = choices[0] if choices and isinstance(choices[0], dict) else {}
     message = choice.get("message", {})
@@ -122,65 +119,39 @@ def normalize_response(provider: str, payload: Any) -> dict[str, Any]:
             out["reasoning_tokens"] = _integer(details.get("reasoning_tokens"))
         if out["reasoning_tokens"] is None:
             out["reasoning_tokens"] = _integer(usage.get("reasoning_tokens"))
-    logprobs = choice.get("logprobs")
-    if isinstance(logprobs, dict):
-        values = logprobs.get("token_logprobs")
-        if not isinstance(values, list):
-            values = logprobs.get("content")
-        count = len(values) if isinstance(values, list) else 0
-        out["logprobs_token_count"] = count
-        out["logprobs_present"] = count > 0
     return out
 
 
 def _payload(spec: dict[str, str], messages: list[dict[str, str]],
-             max_tokens: int, logprobs: int | None) -> dict[str, Any]:
-    provider = spec["provider"]
-    if spec["api_style"] == "gemini":
-        if logprobs is not None:
-            raise ValueError("Gemini logprobs are not requested")
-        text = "\n\n".join(
-            f"{m['role'].upper()}:\n{m['content']}" for m in messages
-        )
-        return {
-            "contents": [{"parts": [{"text": text}]}],
-            "generationConfig": {
-                "temperature": TEMPERATURE, "topP": TOP_P,
-                "maxOutputTokens": max_tokens,
-                "thinkingConfig": {"thinkingLevel": "minimal"},
-            },
-        }
-    body: dict[str, Any] = {
-        "model": spec["model_id"], "messages": messages,
-        "temperature": TEMPERATURE, "top_p": TOP_P,
-    }
-    if provider == "groq":
-        body.update(max_completion_tokens=max_tokens,
-                    reasoning_effort="none", include_reasoning=False)
-    else:
-        body["max_tokens"] = max_tokens
-    if provider == "together":
-        body["reasoning"] = {"enabled": False}
+             max_tokens: int, logprobs: int | None = None) -> dict[str, Any]:
+    if spec["provider"] != "openrouter" or spec["endpoint"] != OPENROUTER_ENDPOINT:
+        raise ValueError("Candidate is not routed through the verified OpenRouter endpoint")
     if logprobs is not None:
-        if provider != "together":
-            raise ValueError("logprobs probes are restricted to Together")
-        body["logprobs"] = logprobs
-    return body
+        raise ValueError("This v9 runner does not issue provider-specific logprobs probes")
+    return {
+        "model": spec["model_id"],
+        "messages": messages,
+        "temperature": TEMPERATURE,
+        "top_p": TOP_P,
+        "max_tokens": max_tokens,
+    }
 
 
 def execute_request(spec: dict[str, str], api_key: str,
                     messages: list[dict[str, str]], max_tokens: int,
                     timeout_seconds: int = TIMEOUT_SECONDS,
                     logprobs: int | None = None) -> dict[str, Any]:
-    """Make one call; the API key is used only in the HTTP header."""
-    headers = {"Content-Type": "application/json"}
-    if spec["provider"] == "gemini":
-        headers["x-goog-api-key"] = api_key
-    else:
-        headers["Authorization"] = f"Bearer {api_key}"
+    """Make one request; the API key is used only in the HTTP Authorization header."""
+    if spec.get("env_var") != "OPENROUTER_API_KEY":
+        raise ValueError("Candidate must use OPENROUTER_API_KEY")
     body = json.dumps(_payload(spec, messages, max_tokens, logprobs),
                       ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    req = urllib.request.Request(spec["endpoint"], data=body, headers=headers, method="POST")
+    req = urllib.request.Request(
+        spec["endpoint"],
+        data=body,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+        method="POST",
+    )
     started = time.monotonic()
     try:
         with urllib.request.urlopen(req, timeout=timeout_seconds) as response:
@@ -217,21 +188,22 @@ def _result(spec: dict[str, str], response: dict[str, Any]) -> dict[str, Any]:
         blockers.append("raw_text_empty")
     if data.get("finish_reason") == "length":
         blockers.append("finish_reason_length")
-    if data.get("reasoning_tokens") is not None and data["reasoning_tokens"] > 0:
+    reasoning = data.get("reasoning_tokens")
+    if reasoning is not None and reasoning > 0:
         blockers.append("reasoning_tokens_positive")
     return {
-        "provider": spec["provider"], "model_id": spec["model_id"],
-        "endpoint": spec["endpoint"], "http_status": response.get("http_status"),
+        "slot": spec["slot"], "provider": spec["provider"], "model_id": spec["model_id"],
+        "endpoint": spec["endpoint"], "auth_env_var": "OPENROUTER_API_KEY",
+        "http_status": response.get("http_status"),
         "latency_ms": response.get("latency_ms"), "available": not blockers,
         "availability_blockers": blockers, "raw_text_empty": not text.strip(),
         "raw_text_chars": len(text),
         "raw_text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
         "raw_text_is_single_digit_1": text.strip() == "1",
         "finish_reason": data.get("finish_reason"),
-        "reasoning_tokens": data.get("reasoning_tokens"),
+        "reasoning_tokens": reasoning,
         "input_tokens": data.get("input_tokens"), "output_tokens": data.get("output_tokens"),
-        "total_tokens": data.get("total_tokens"),
-        "error_category": response.get("error_category"),
+        "total_tokens": data.get("total_tokens"), "error_category": response.get("error_category"),
     }
 
 
@@ -246,70 +218,57 @@ def _save(report: dict[str, Any], output: Path, secrets: list[str]) -> None:
 
 
 def _tracked_request(
-    spec: dict[str, str],
-    api_key: str,
-    messages: list[dict[str, str]],
-    output: Path,
-    report: dict[str, Any],
-    secrets: list[str],
-    timeout: int,
-    logprobs: int | None = None,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+    spec: dict[str, str], api_key: str, output: Path,
+    report: dict[str, Any], secrets: list[str], timeout: int,
+) -> dict[str, Any]:
+    messages = [{"role": "user", "content": PROMPT}]
     call_id = f"http-{len(report['api_request_ledger']) + 1:04d}"
-    request_body = _payload(spec, messages, MAX_TOKENS, logprobs)
+    request_body = _payload(spec, messages, MAX_TOKENS)
     attempt = {
-        "call_id": call_id,
-        "request_state": "started",
-        "started_utc": datetime.now(timezone.utc).isoformat(),
-        "provider": spec["provider"],
-        "model_id": spec["model_id"],
-        "endpoint": spec["endpoint"],
+        "call_id": call_id, "slot": spec["slot"], "provider": spec["provider"],
+        "model_id": spec["model_id"], "endpoint": spec["endpoint"],
+        "request_state": "started", "started_utc": datetime.now(timezone.utc).isoformat(),
         "prompt_sha256": hashlib.sha256(
             json.dumps(messages, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         ).hexdigest(),
         "request_body_sha256": hashlib.sha256(
             json.dumps(request_body, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         ).hexdigest(),
-        "max_tokens": MAX_TOKENS,
-        "temperature": TEMPERATURE,
-        "top_p": TOP_P,
-        "requested_logprobs": logprobs,
+        "max_tokens": MAX_TOKENS, "temperature": TEMPERATURE, "top_p": TOP_P,
+        "auth_env_var": "OPENROUTER_API_KEY",
     }
     report["api_request_ledger"].append(attempt)
     report["http_calls_started"] = len(report["api_request_ledger"])
     _save(report, output, secrets)
 
-    response = execute_request(
-        spec, api_key, messages, MAX_TOKENS, timeout_seconds=timeout, logprobs=logprobs
-    )
+    response = execute_request(spec, api_key, messages, MAX_TOKENS, timeout_seconds=timeout)
     row = _result(spec, response)
     row["call_id"] = call_id
     attempt.update({
         "request_state": "http_response_received" if response.get("http_status") is not None else "no_http_response",
         "completed_utc": datetime.now(timezone.utc).isoformat(),
-        "http_status": response.get("http_status"),
-        "latency_ms": response.get("latency_ms"),
-        "error_category": response.get("error_category"),
-        "available": row["available"],
+        "http_status": response.get("http_status"), "latency_ms": response.get("latency_ms"),
+        "error_category": response.get("error_category"), "available": row["available"],
     })
     report["http_responses_received"] = sum(
         1 for call in report["api_request_ledger"]
         if call["request_state"] == "http_response_received"
     )
+    report["results"].append(row)
     _save(report, output, secrets)
-    return row, response
+    return row
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true",
-                        help="send four provider probes and two Together logprobs probes")
+                        help="send four OpenRouter engineering connectivity probes")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     parser.add_argument("--output", default=f"results/api_ping_check_v9_{stamp}.json")
     parser.add_argument("--timeout", type=int, default=TIMEOUT_SECONDS)
     args = parser.parse_args(argv)
     if not args.execute:
-        print("DRY RUN: no keys read and no HTTP requests sent; planned calls=6.")
+        print("DRY RUN: no keys read and no HTTP requests sent; planned calls=4.")
         return 0
     if args.timeout < 1:
         print("BLOCKED: timeout must be at least 1 second")
@@ -320,65 +279,35 @@ def main(argv: list[str] | None = None) -> int:
     if output.exists():
         print("BLOCKED: output exists; refusing to overwrite a prior run")
         return 2
-
-    missing = sorted({s["env_var"] for s in CANDIDATES if not os.environ.get(s["env_var"])})
-    if missing:
-        print("BLOCKED: missing required environment variables: " + ", ".join(missing))
+    key = os.environ.get("OPENROUTER_API_KEY", "")
+    if not key:
+        print("BLOCKED: missing required environment variable: OPENROUTER_API_KEY")
         return 2
 
-    keys = {name: os.environ[name] for name in ENV_BY_PROVIDER.values()}
     report: dict[str, Any] = {
-        "schema": "designlab-v9-engineering-connectivity-v1",
+        "schema": "designlab-v9-engineering-connectivity-v2",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "run_classification": "engineering_connectivity_not_study_data",
         "prompt": PROMPT, "temperature": TEMPERATURE, "top_p": TOP_P,
         "max_tokens": MAX_TOKENS, "confirmatory_data": False,
-        "connectivity_probe_count": 4, "together_logprobs_probe_count": 2,
-        "http_calls_started": 0, "http_responses_received": 0,
-        "api_request_ledger": [], "results": [], "logprobs_results": [],
+        "endpoint": OPENROUTER_ENDPOINT, "auth_env_var": "OPENROUTER_API_KEY",
+        "connectivity_probe_count": len(CANDIDATES), "http_calls_started": 0,
+        "http_responses_received": 0, "api_request_ledger": [], "results": [],
     }
-    _save(report, output, list(keys.values()))
+    _save(report, output, [key])
     try:
         for spec in CANDIDATES:
-            row, response = _tracked_request(
-                spec, keys[spec["env_var"]], [{"role": "user", "content": PROMPT}],
-                output, report, list(keys.values()), args.timeout,
-            )
-            report["results"].append(row)
-            _save(report, output, list(keys.values()))
-            print(f"{spec['provider']} {spec['model_id']}: "
-                  f"HTTP {row['http_status']} available={row['available']}")
-        together = next(s.copy() for s in CANDIDATES if s["provider"] == "together")
-        for model_id in LOGPROBS_PROBES:
-            spec = together.copy()
-            spec["model_id"] = model_id
-            row, response = _tracked_request(
-                spec, keys[spec["env_var"]], [{"role": "user", "content": PROMPT}],
-                output, report, list(keys.values()), args.timeout, logprobs=1,
-            )
-            data = normalize_response("together", response.get("payload"))
-            row.update(
-                requested_logprobs=1,
-                logprobs_present=data.get("logprobs_present", False),
-                logprobs_token_count=data.get("logprobs_token_count", 0),
-                gate1_utility_eligible=bool(
-                    row["available"] and data.get("logprobs_present")
-                ),
-            )
-            report["logprobs_results"].append(row)
-            _save(report, output, list(keys.values()))
-            print(f"Together logprobs {model_id}: HTTP {row['http_status']} "
-                  f"supported={row['logprobs_present']} "
-                  f"gate1={row['gate1_utility_eligible']}")
+            row = _tracked_request(spec, key, output, report, [key], args.timeout)
+            print(f"{row['slot']} {row['model_id']}: HTTP {row['http_status']} "
+                  f"available={row['available']}")
     finally:
-        _save(report, output, list(keys.values()))
-    print(f"Wrote redacted result metadata to {output}")
-    all_connectivity_available = (
-        len(report["results"]) == len(CANDIDATES)
-        and all(row["available"] for row in report["results"])
+        _save(report, output, [key])
+    all_available = len(report["results"]) == len(CANDIDATES) and all(
+        row["available"] for row in report["results"]
     )
-    print("Connectivity gate: " + ("PASS" if all_connectivity_available else "FAIL"))
-    return 0 if all_connectivity_available else 2
+    print(f"Wrote redacted result metadata to {output}")
+    print("Connectivity gate: " + ("PASS" if all_available else "FAIL"))
+    return 0 if all_available else 2
 
 
 if __name__ == "__main__":

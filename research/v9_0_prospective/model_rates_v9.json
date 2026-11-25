@@ -1,35 +1,41 @@
 {
   "pricing_snapshot_date": "2026-11-26",
   "currency": "USD",
+  "provider": "openrouter",
   "notes": [
+    "Four named candidate slots map one-to-one to model IDs and rates below.",
     "Rates are a versioned estimate snapshot and must be refreshed before a future live run.",
-    "The runner reserves estimated maximum input/output cost before each request and halts before the next request if the cumulative reservation would exceed its cap.",
-    "The Gemini Gemma rate is zero only under the documented free tier; this is not a provider invoice cap."
+    "The runner reserves estimated maximum input/output cost before each request and stops before the next request if the cumulative reservation would exceed its USD 0.25 cap.",
+    "The USD 0.25 cap is enforced by this runner using the listed estimates; it is not an upstream provider billing limit."
   ],
   "models": {
-    "together": {
-      "model_id": "Qwen/Qwen3.5-9B",
-      "input_usd_per_1m_tokens": 0.17,
-      "output_usd_per_1m_tokens": 0.25,
-      "source": "https://docs.together.ai/docs/serverless/models"
+    "qwen_72b": {
+      "provider": "openrouter",
+      "model_id": "qwen/qwen-2.5-72b-instruct",
+      "input_usd_per_1m_tokens": 0.36,
+      "output_usd_per_1m_tokens": 0.4,
+      "source": "https://openrouter.ai/qwen/qwen-2.5-72b-instruct/pricing"
     },
-    "groq": {
-      "model_id": "qwen/qwen3.8-27b",
-      "input_usd_per_1m_tokens": 0.8,
-      "output_usd_per_1m_tokens": 4.0,
-      "source": "https://console.groq.com/docs/model/qwen/qwen3.8-27b"
+    "gemma_27b": {
+      "provider": "openrouter",
+      "model_id": "google/gemma-2-27b-it",
+      "input_usd_per_1m_tokens": 0.65,
+      "output_usd_per_1m_tokens": 0.65,
+      "source": "https://openrouter.ai/google/gemma-2-27b-it/pricing"
     },
-    "openrouter": {
+    "llama_70b": {
+      "provider": "openrouter",
       "model_id": "meta-llama/llama-3.3-70b-instruct",
       "input_usd_per_1m_tokens": 0.1,
       "output_usd_per_1m_tokens": 0.32,
-      "source": "https://openrouter.ai/meta-llama/llama-3.3-70b-instruct/providers"
+      "source": "https://openrouter.ai/meta-llama/llama-3.3-70b-instruct/pricing"
     },
-    "gemini": {
-      "model_id": "gemma-4-26b-a4b-it",
-      "input_usd_per_1m_tokens": 0.0,
-      "output_usd_per_1m_tokens": 0.0,
-      "source": "https://ai.google.dev/gemini-api/docs/pricing"
+    "mistral_24b": {
+      "provider": "openrouter",
+      "model_id": "mistralai/mistral-small-24b-instruct-2501",
+      "input_usd_per_1m_tokens": 0.05,
+      "output_usd_per_1m_tokens": 0.08,
+      "source": "https://openrouter.ai/mistralai/mistral-small-24b-instruct-2501/pricing"
     }
   }
 }
