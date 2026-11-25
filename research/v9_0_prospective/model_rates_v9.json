@@ -1,0 +1,35 @@
+{
+  "pricing_snapshot_date": "2026-11-26",
+  "currency": "USD",
+  "notes": [
+    "Rates are a versioned estimate snapshot and must be refreshed before a future live run.",
+    "The runner reserves estimated maximum input/output cost before each request and halts before the next request if the cumulative reservation would exceed its cap.",
+    "The Gemini Gemma rate is zero only under the documented free tier; this is not a provider invoice cap."
+  ],
+  "models": {
+    "together": {
+      "model_id": "Qwen/Qwen3.5-9B",
+      "input_usd_per_1m_tokens": 0.17,
+      "output_usd_per_1m_tokens": 0.25,
+      "source": "https://docs.together.ai/docs/serverless/models"
+    },
+    "groq": {
+      "model_id": "qwen/qwen3.8-27b",
+      "input_usd_per_1m_tokens": 0.8,
+      "output_usd_per_1m_tokens": 4.0,
+      "source": "https://console.groq.com/docs/model/qwen/qwen3.8-27b"
+    },
+    "openrouter": {
+      "model_id": "meta-llama/llama-3.3-70b-instruct",
+      "input_usd_per_1m_tokens": 0.1,
+      "output_usd_per_1m_tokens": 0.32,
+      "source": "https://openrouter.ai/meta-llama/llama-3.3-70b-instruct/providers"
+    },
+    "gemini": {
+      "model_id": "gemma-4-26b-a4b-it",
+      "input_usd_per_1m_tokens": 0.0,
+      "output_usd_per_1m_tokens": 0.0,
+      "source": "https://ai.google.dev/gemini-api/docs/pricing"
+    }
+  }
+}
