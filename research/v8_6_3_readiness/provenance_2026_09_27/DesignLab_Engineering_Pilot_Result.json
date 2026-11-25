@@ -1,0 +1,53 @@
+{
+  "kind": "engineering_pilot_not_study_data",
+  "created_utc": "2026-09-27T11:34:52.438176+00:00",
+  "inventory_sha256": "a3280bc8fa59ca36162c8f043a00017e9f422ce30e51163b30e00783a89d031b",
+  "prompt": "Engineering connectivity test. Reply with exactly the single digit 1.",
+  "generation_limits": {
+    "temperature": 0,
+    "top_p": 1,
+    "max_output_tokens": 16,
+    "retries": 0
+  },
+  "providers": {
+    "Together": {
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "status": "http_error",
+      "http_status": 400,
+      "started_utc": "2026-09-27T11:35:13.757475+00:00"
+    },
+    "Groq": {
+      "model_id": "openai/gpt-oss-20b",
+      "status": "response_received",
+      "http_status": 200,
+      "started_utc": "2026-09-27T11:48:04.768493+00:00",
+      "ended_utc": "2026-09-27T11:48:05.823306+00:00",
+      "response_model": "openai/gpt-oss-20b",
+      "raw_text": "",
+      "finish_reasons": [
+        "length"
+      ],
+      "usage": {
+        "queue_time": 0.344842654,
+        "prompt_tokens": 84,
+        "prompt_time": 0.008508211,
+        "completion_tokens": 16,
+        "completion_time": 0.016103418,
+        "total_tokens": 100,
+        "total_time": 0.024611629,
+        "completion_tokens_details": {
+          "reasoning_tokens": 14
+        }
+      },
+      "response_id": "chatcmpl-fd1e95df-b680-4627-b3e0-d36de2017600"
+    },
+    "Gemini": {
+      "model_id": "models/gemini-2.5-flash",
+      "status": "http_error",
+      "http_status": 404,
+      "started_utc": "2026-09-27T11:48:29.142417+00:00"
+    }
+  },
+  "study_firewall": "Excluded from v8.6.3 and any future confirmatory analysis.",
+  "resume_inventory_sha256": "05b351ef988eea8590efa1e7c541d49be82ef8f45addd1bb4dc6a33927180e7a"
+}

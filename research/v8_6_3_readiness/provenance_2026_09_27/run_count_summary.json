@@ -1,0 +1,25 @@
+{
+  "audit_scope": "Recorded local evidence for 2026-09-27 DesignLab engineering connectivity diagnostics; GitHub Actions excluded by scope",
+  "engineering_connectivity_probe_POST_requests": 6,
+  "engineering_catalog_inventory_GET_requests": 3,
+  "total_documented_external_provider_HTTP_requests": 9,
+  "POST_http_statuses": {
+    "200": 4,
+    "400": 1,
+    "404": 1
+  },
+  "api_ping_check_requests_evidenced": 0,
+  "pilot_A_runs_evidenced": 0,
+  "pilot_B_runs_evidenced": 0,
+  "confirmatory_study_runs_evidenced": 0,
+  "source_artifacts": [
+    "DesignLab_Engineering_Pilot_Result.json",
+    "DesignLab_Provider_Diagnostic_V2_Result.json",
+    "DesignLab_API_Access_Inventory.json",
+    "CURRENT_READINESS_REPORT.json",
+    "open_weight_binding_resolution_2026_09_27.zip"
+  ],
+  "limitation": "Exact count is what the local records evidence; provider-side account activity/billing logs were not queried, so unrecorded external calls cannot be ruled out.",
+  "api_keys_read_or_logged": false,
+  "frozen_v8_6_3_files_modified_by_audit": false
+}

@@ -1,0 +1,85 @@
+{
+  "kind": "engineering_diagnostic_v2_not_study_data",
+  "created_utc": "2026-09-27T11:55:48.068306+00:00",
+  "inventory_sha256": "05b351ef988eea8590efa1e7c541d49be82ef8f45addd1bb4dc6a33927180e7a",
+  "catalog_sha256": "de2b87b15963a0c46f14fc2b13b30d8d976b9b9f42dc2ee7f69ddd16e52c5b0f",
+  "prompt": "Engineering connectivity test. Reply with exactly the single digit 1.",
+  "models": {
+    "Together": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "Groq": "openai/gpt-oss-20b",
+    "Gemini": "models/gemini-3.5-flash-lite"
+  },
+  "retries": 0,
+  "providers": {
+    "Together": {
+      "model_id": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      "status": "response_received",
+      "http_status": 200,
+      "started_utc": "2026-09-27T11:56:03.473013+00:00",
+      "ended_utc": "2026-09-27T11:56:06.114696+00:00",
+      "response_model": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      "raw_text": "1",
+      "finish_reasons": [
+        "stop"
+      ],
+      "usage": {
+        "prompt_tokens": 48,
+        "completion_tokens": 2,
+        "total_tokens": 50,
+        "cached_tokens": 0
+      },
+      "response_id": "p2xFcXS-4YNCb4-a41a52adce5f71b6"
+    },
+    "Groq": {
+      "model_id": "openai/gpt-oss-20b",
+      "status": "response_received",
+      "http_status": 200,
+      "started_utc": "2026-09-27T11:56:22.012452+00:00",
+      "ended_utc": "2026-09-27T11:56:23.317303+00:00",
+      "response_model": "openai/gpt-oss-20b",
+      "raw_text": "1",
+      "finish_reasons": [
+        "stop"
+      ],
+      "usage": {
+        "queue_time": 0.314921156,
+        "prompt_tokens": 84,
+        "prompt_time": 0.003979278,
+        "completion_tokens": 18,
+        "completion_time": 0.018390177,
+        "total_tokens": 102,
+        "total_time": 0.022369455,
+        "completion_tokens_details": {
+          "reasoning_tokens": 8
+        }
+      },
+      "response_id": "chatcmpl-00e39711-84d6-41ef-856e-7e8f0a25ffb8"
+    },
+    "Gemini": {
+      "model_id": "models/gemini-3.5-flash-lite",
+      "status": "response_received",
+      "http_status": 200,
+      "started_utc": "2026-09-27T11:56:37.491435+00:00",
+      "ended_utc": "2026-09-27T11:56:50.759736+00:00",
+      "response_model": "gemini-3.5-flash-lite",
+      "raw_text": "1",
+      "finish_reasons": [
+        "STOP"
+      ],
+      "usage": {
+        "promptTokenCount": 14,
+        "candidatesTokenCount": 1,
+        "totalTokenCount": 15,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 14
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "response_id": "dgS5aquOBemxjuMPtsyhqAQ"
+    }
+  },
+  "study_firewall": "Excluded from v8.6.3 and future confirmatory data."
+}
