@@ -684,5 +684,17 @@
     "401": 1,
     "402": 4,
     "404": 1
+  },
+  "local_hf_confirmatory_variant": {
+    "status": "prepared_not_run",
+    "live_runs_evidenced": 0,
+    "gpu_execution_attempts": 0,
+    "completed_items": 0,
+    "external_inference_api_requests": 0,
+    "model_inference_api_spend_usd": 0.0,
+    "offline_validation": "23 repository tests passed; verified-pool local-hf dry run; one-cell notebook syntax checked",
+    "item_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
+    "protocol_variant": "v9-local-hf-4bit-four-family",
+    "scope_note": "Distinct prospective model/backend variant; not an execution of frozen v8.6.3 and not evidence that the 260-item run is complete."
   }
 }
