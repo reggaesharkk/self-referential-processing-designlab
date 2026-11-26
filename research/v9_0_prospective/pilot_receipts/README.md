@@ -20,4 +20,13 @@ The third execution records 80 calls, 80 HTTP 200 responses, and USD 0.00494411 
 
 I archived the supplied v9_0_pilot_b_results (3).zip in [2026-11-26_run_4/](2026-11-26_run_4/). Its SHA-256 is 50618f7279799d08f562490455f261bd024094617b72f95ca9d37f799f116f1b, matching the supplied digest. The receipt records 70 calls, 70 HTTP 200 responses, USD 0.00350597 estimated spend, and USD 0.02412054 pre-request reservation. Gemma and Mistral each completed 25/25 item-stage pairs with complete_pipeline: true; Qwen and Llama each completed 2 pairs. Confirmatory data collected is false.
 
-Across the four receipts, I recorded 190 calls, 190 responses, and USD 0.01018135 estimated spend. I found no Pilot A run and no confirmatory study run. I keep all engineering connectivity checks separate from Pilot B.
+Across the five receipts, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. I found no Pilot A run and no confirmatory study run. I keep all 22 engineering connectivity POST probes separate from Pilot B.
+
+
+## Fifth receipt — Pilot B passed at 4/4
+
+I archived `v9_0_pilot_b_results (4).zip` in [2026-11-26_run_5_PASS/](2026-11-26_run_5_PASS/). Its measured source ZIP SHA-256 is `44873ec36a8ea48d29a4f98506b0ee9ce7b82af5edf2388f538bcfaf170afe64`. The extracted `pilot_b_v9_result.json` SHA-256 is `5a7357e69b3a15e853d61df1e94d0f571e4a478907358caf6d2d6d643e0a5149`, matching the digest in the request. I verified the source ZIP's integrity and all six member hashes listed by its internal SHA256SUMS.txt.
+
+The fifth execution records 127 calls, 127 HTTP 200 responses, zero transient retries, USD 0.00908310 estimated spend, and USD 0.05747706 reserved under the USD 0.25 cap. Qwen, Gemma, Llama, and Mistral each completed 25/25 item-stage pairs across `TR_01`–`TR_05`; all four have `complete_pipeline: true`. I classify this as a passed prospective Pilot B execution, not confirmatory data.
+
+Across my five Pilot B receipts, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. I have zero Pilot A executions and zero confirmatory study executions. I keep engineering probes separate from these Pilot B counts.

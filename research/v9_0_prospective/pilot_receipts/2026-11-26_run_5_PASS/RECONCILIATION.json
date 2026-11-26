@@ -1,0 +1,55 @@
+{
+  "run_number": 5,
+  "run_label": "2026-11-26_run_5_PASS",
+  "source_file": "v9_0_pilot_b_results (4).zip",
+  "source_zip_archive_name": "source_v9_0_pilot_b_results_run_5.zip",
+  "source_zip_sha256": "44873ec36a8ea48d29a4f98506b0ee9ce7b82af5edf2388f538bcfaf170afe64",
+  "receipt_sha256": "5a7357e69b3a15e853d61df1e94d0f571e4a478907358caf6d2d6d643e0a5149",
+  "calls_started": 127,
+  "responses": 127,
+  "http_status_counts": {
+    "200": 127
+  },
+  "transient_retry_attempts": 0,
+  "estimated_spend_usd": 0.0090831,
+  "budget_reserved_usd": 0.05747706,
+  "budget_cap_usd": 0.25,
+  "item_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
+  "items": [
+    "TR_01",
+    "TR_02",
+    "TR_03",
+    "TR_04",
+    "TR_05"
+  ],
+  "calls_by_model_slot": {
+    "qwen_72b": 32,
+    "gemma_27b": 34,
+    "llama_70b": 30,
+    "mistral_24b": 31
+  },
+  "successful_item_stage_pairs_by_model_slot": {
+    "qwen_72b": 25,
+    "gemma_27b": 25,
+    "llama_70b": 25,
+    "mistral_24b": 25
+  },
+  "complete_pipeline_by_model_slot": {
+    "qwen_72b": true,
+    "gemma_27b": true,
+    "llama_70b": true,
+    "mistral_24b": true
+  },
+  "confirmatory_data_collected": false,
+  "classification": "prospective_pilot_b_passed_not_confirmatory_study",
+  "engineering_connectivity_probes": {
+    "calls_started": 4,
+    "responses": 4,
+    "http_status_counts": {
+      "200": 4
+    },
+    "transient_retries": 0,
+    "run_classification": "engineering_connectivity_not_study_data",
+    "record": "api_ping_check_v9.json"
+  }
+}

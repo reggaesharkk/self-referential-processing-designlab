@@ -31,7 +31,8 @@ EXPECTED_ITEMS_POOL_SHA256 = (
     "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3"
 )
 DEFAULT_BUDGET_USD = 0.25
-MAX_BUDGET_USD = 0.25
+MAX_BUDGET_USD = 0.50
+BUDGET_CAP_USD_BY_NUM_ITEMS = {5: 0.25, 50: 0.50, 260: 0.25}
 DEFAULT_NUM_ITEMS = 5
 PILOT_ITEMS_PER_RUN = DEFAULT_NUM_ITEMS
 SUPPORTED_NUM_ITEMS = (5, 50, 260)
@@ -218,7 +219,8 @@ def load_rate_card(path: Path) -> tuple[dict[str, dict[str, Any]], str]:
         "maximum_logical_calls_with_fallback_for_default_items": call_bounds(DEFAULT_NUM_ITEMS)["maximum_logical_calls_with_shared_scrub_fallback"],
         "maximum_http_attempts_with_retries_for_default_items": call_bounds(DEFAULT_NUM_ITEMS)["maximum_http_attempts_with_transient_retries"],
         "output_token_reservation_multiplier": RESERVATION_OUTPUT_TOKEN_MULTIPLIER,
-        "budget_cap_usd": MAX_BUDGET_USD,
+        "maximum_budget_usd": MAX_BUDGET_USD,
+        "budget_cap_usd_by_num_items": {str(k): v for k, v in BUDGET_CAP_USD_BY_NUM_ITEMS.items()},
     }
     if document.get("runner_policy") != expected_policy:
         raise ValueError("BLOCKED: rate-card runner policy does not match locked token, retry, call, and budget settings")
@@ -623,15 +625,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--num-items", type=int, choices=SUPPORTED_NUM_ITEMS, default=DEFAULT_NUM_ITEMS,
                         help="number of leading pool items: 5 Pilot B, 50 Pilot A, or 260 confirmatory")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
-    parser.add_argument("--output", type=Path,
-                        default=Path(__file__).resolve().parent / "results" / f"pilot_b_v9_{stamp}.json")
+    parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--timeout", type=int, default=45)
     parser.add_argument("--execute", action="store_true",
                         help="send requests after pool, rate, and key preflight")
     args = parser.parse_args(argv)
-    if args.budget_usd <= 0 or args.budget_usd > MAX_BUDGET_USD:
-        print("BLOCKED: budget must be positive and no more than USD 0.25")
+    item_budget_limit = BUDGET_CAP_USD_BY_NUM_ITEMS[args.num_items]
+    if args.budget_usd <= 0 or args.budget_usd > item_budget_limit:
+        print(f"BLOCKED: budget must be positive and no more than USD {item_budget_limit:.2f} for {args.num_items} items")
         return 2
+    run_label = {5: "pilot_b", 50: "pilot_a", 260: "confirmatory"}[args.num_items]
+    if args.output is None:
+        args.output = (Path(__file__).resolve().parent / "results" /
+                       f"{run_label}_v9_{stamp}.json")
     try:
         pool_hash, items = load_items(args.items, args.num_items)
         rates, pricing_date = load_rate_card(args.rates)
@@ -664,15 +670,16 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     keys = {name: os.environ[name] for name in ENV_BY_PROVIDER.values()}
     guard = SpendGuard(args.budget_usd)
-    classification, _ = run_classification_for_num_items(args.num_items)
+    classification, confirmatory_data_collected = run_classification_for_num_items(args.num_items)
     bounds = call_bounds(args.num_items)
     report: dict[str, Any] = {
-        "schema": "designlab-v9-pilot-b-v4",
+        "schema": ("designlab-v9-pilot-b-v4" if args.num_items == 5
+                   else f"designlab-v9-{run_label}-v1"),
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "run_classification": classification,
         "num_items_requested": args.num_items,
         "num_items_selected": len(items),
-        "confirmatory_data_collected": False,
+        "confirmatory_data_collected": confirmatory_data_collected,
         "item_pool_sha256": pool_hash,
         "item_pool_file": str(args.items.resolve()),
         "selected_first_items": [
@@ -730,6 +737,7 @@ def main(argv: list[str] | None = None) -> int:
             "domain2_digit_evaluation": 16,
         },
         "budget_cap_usd": args.budget_usd,
+        "budget_limit_usd_for_num_items": item_budget_limit,
         "pricing_snapshot_date": pricing_date,
         "budget_method": "pre-request UTF-8 byte and output-token reservation at versioned rate card",
         "logical_call_records": 0,

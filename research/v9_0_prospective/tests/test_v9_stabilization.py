@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import contextlib
 import json
 import sys
 import unittest
@@ -13,6 +14,7 @@ sys.path.insert(0, str(V9_DIR))
 
 import api_ping_check_v9 as api
 import pilot_b_v9 as pilot
+import pilot_a_v9 as pilot_a
 
 
 class FakeClock:
@@ -246,6 +248,23 @@ class RunnerPolicyTests(unittest.TestCase):
         self.assertEqual(billed["qwen_72b"]["input_tokens"], 11)
         self.assertEqual(billed["gemma_27b"]["input_tokens"], 7)
         self.assertEqual(billed["gemma_27b"]["estimated_usd"], 0.00004)
+
+    def test_pilot_a_locks_fifty_items_and_half_dollar_cap(self) -> None:
+        forwarded = []
+        with patch.object(pilot_a.pilot_b_v9, "main", side_effect=lambda argv: forwarded.extend(argv) or 0):
+            self.assertEqual(pilot_a.main(["--execute"]), 0)
+        self.assertIn("--num-items", forwarded)
+        self.assertEqual(forwarded[forwarded.index("--num-items") + 1], "50")
+        self.assertEqual(forwarded[forwarded.index("--budget-usd") + 1], "0.5")
+        self.assertIn("--execute", forwarded)
+        self.assertEqual(pilot.BUDGET_CAP_USD_BY_NUM_ITEMS, {5: 0.25, 50: 0.50, 260: 0.25})
+        self.assertEqual(pilot.run_classification_for_num_items(50),
+                         ("prospective_pilot_a_not_confirmatory_study", False))
+
+    def test_pilot_a_rejects_budget_above_half_dollar(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                pilot_a.main(["--budget-usd", "0.51"])
 
     def test_rate_card_matches_runner_policy(self) -> None:
         rates, snapshot = pilot.load_rate_card(V9_DIR / "model_rates_v9.json")

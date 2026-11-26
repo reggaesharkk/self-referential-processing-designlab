@@ -1,7 +1,7 @@
 {
   "schema": "designlab-live-run-accountability-v5",
   "as_of_date": "2026-11-26",
-  "source_basis": "local receipts including four supplied Pilot B archives, September and November engineering records, and published PSI result files; not provider billing logs",
+  "source_basis": "local receipts including five supplied Pilot B archives, September and November engineering records, and published PSI result files; not provider billing logs",
   "engineering_connectivity_post_requests": {
     "2026-09-27": {
       "count": 6,
@@ -12,24 +12,30 @@
       }
     },
     "2026-11-26": {
-      "count": 4,
+      "count": 16,
       "http_status_counts": {
-        "200": 4
+        "200": 16
       },
-      "run_classification": "engineering_connectivity_not_study_data"
+      "run_classification": "engineering_connectivity_not_study_data",
+      "saved_probe_outputs": [
+        "pilot_receipts/2026-11-26_run_2/api_ping_check_v9.json",
+        "pilot_receipts/2026-11-26_run_3/api_ping_check_v9.json",
+        "pilot_receipts/2026-11-26_run_4/api_ping_check_v9.json",
+        "pilot_receipts/2026-11-26_run_5_PASS/api_ping_check_v9.json"
+      ]
     },
-    "total_count": 10,
+    "total_count": 22,
     "http_status_counts_total": {
-      "200": 8,
+      "200": 20,
       "400": 1,
       "404": 1
     }
   },
   "pilot_a_runs_evidenced": 0,
-  "pilot_b_runs_evidenced": 4,
-  "pilot_b_calls_started_total": 190,
-  "pilot_b_responses_total": 190,
-  "pilot_b_estimated_spend_usd_total": 0.01018135,
+  "pilot_b_runs_evidenced": 5,
+  "pilot_b_calls_started_total": 317,
+  "pilot_b_responses_total": 317,
+  "pilot_b_estimated_spend_usd_total": 0.01926445,
   "pilot_b_runs": [
     {
       "run_number": 1,
@@ -162,12 +168,57 @@
       },
       "confirmatory_data_collected": false,
       "classification": "prospective_pilot_b_partial_model_coverage_not_confirmatory_study"
+    },
+    {
+      "run_number": 5,
+      "run_label": "2026-11-26_run_5_PASS",
+      "source_file": "v9_0_pilot_b_results (4).zip",
+      "source_zip_archive_name": "source_v9_0_pilot_b_results_run_5.zip",
+      "source_zip_sha256": "44873ec36a8ea48d29a4f98506b0ee9ce7b82af5edf2388f538bcfaf170afe64",
+      "receipt_sha256": "5a7357e69b3a15e853d61df1e94d0f571e4a478907358caf6d2d6d643e0a5149",
+      "calls_started": 127,
+      "responses": 127,
+      "http_status_counts": {
+        "200": 127
+      },
+      "transient_retry_attempts": 0,
+      "estimated_spend_usd": 0.0090831,
+      "budget_reserved_usd": 0.05747706,
+      "budget_cap_usd": 0.25,
+      "item_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
+      "items": [
+        "TR_01",
+        "TR_02",
+        "TR_03",
+        "TR_04",
+        "TR_05"
+      ],
+      "calls_by_model_slot": {
+        "qwen_72b": 32,
+        "gemma_27b": 34,
+        "llama_70b": 30,
+        "mistral_24b": 31
+      },
+      "successful_item_stage_pairs_by_model_slot": {
+        "qwen_72b": 25,
+        "gemma_27b": 25,
+        "llama_70b": 25,
+        "mistral_24b": 25
+      },
+      "complete_pipeline_by_model_slot": {
+        "qwen_72b": true,
+        "gemma_27b": true,
+        "llama_70b": true,
+        "mistral_24b": true
+      },
+      "confirmatory_data_collected": false,
+      "classification": "prospective_pilot_b_passed_not_confirmatory_study"
     }
   ],
   "confirmatory_study_runs_evidenced": 0,
-  "designlab_documented_model_inference_post_calls_total": 200,
+  "designlab_documented_model_inference_post_calls_total": 339,
   "designlab_provider_catalog_metadata_get_requests": 3,
-  "designlab_provider_http_requests_total_including_metadata": 203,
+  "designlab_provider_http_requests_total_including_metadata": 342,
   "psi_live_colab_runs_evidenced": 1,
   "psi_live_result_rows": 5,
   "psi_documented_local_t4_rows": 4,
@@ -179,12 +230,66 @@
   "api_keys_read_or_logged": false,
   "new_provider_requests_sent_by_assistant_during_audit": 0,
   "frozen_v8_6_3_files_modified": false,
-  "documented_live_experimental_executions_across_designlab_and_psi": 5,
+  "documented_live_experimental_executions_across_designlab_and_psi": 6,
   "pre_run_3_colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
   "pre_run_3_colab_bundle_bytes": 65722,
   "pre_run_3_colab_bundle_members": 24,
   "pre_run_3_colab_bundle_credential_shaped_matches": 0,
   "earlier_colab_bundle_sha256": "0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035",
   "colab_bundle_sha256": null,
-  "colab_bundle_sha256_note": "The current bundle hash is recorded in D:\\Self_Referential_DesignLab_Audit_2026-11-26\\RUN4_STABILIZATION_PUBLICATION_2026-11-26.md because this ledger is included inside the bundle."
+  "colab_bundle_sha256_note": "Pilot A and Pilot B bundle hashes are recorded outside the archives in D:\\Self_Referential_DesignLab_Audit_2026-11-26\\RUN5_PILOT_A_PUBLICATION_2026-11-26.md because the ledgers are included inside each bundle.",
+  "pilot_a_preparation": {
+    "entrypoint": "research/v9_0_prospective/pilot_a_v9.py",
+    "notebook": "research/v9_0_prospective/DesignLab_v9_0_Colab_PilotA.ipynb",
+    "num_items": 50,
+    "selected_items": "first 50 from verified items_pool_v1.json",
+    "classification": "prospective_pilot_a_not_confirmatory_study",
+    "confirmatory_data_collected": false,
+    "budget_cap_usd": 0.5,
+    "execution_evidenced": false,
+    "estimated_spend_usd_using_run_5_per_item_rate": 0.090831
+  },
+  "engineering_connectivity_runs": [
+    {
+      "record": "2026-09-27",
+      "calls": 6,
+      "http_status_counts": {
+        "200": 4,
+        "400": 1,
+        "404": 1
+      }
+    },
+    {
+      "record": "2026-11-26_run_2",
+      "calls": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "transient_retries": 0
+    },
+    {
+      "record": "2026-11-26_run_3",
+      "calls": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "transient_retries": 0
+    },
+    {
+      "record": "2026-11-26_run_4",
+      "calls": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "transient_retries": 0
+    },
+    {
+      "record": "2026-11-26_run_5_PASS",
+      "calls": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "transient_retries": 0
+    }
+  ]
 }

@@ -3,12 +3,12 @@
   "currency": "USD",
   "provider": "openrouter",
   "notes": [
-    "Four tested model slots map one-to-one to the model IDs and rates below.",
-    "The shared neutral utility scrubber routes each tested model through an independent model: Gemma for Qwen, Llama, and Mistral outputs; Mistral for Gemma outputs. Mistral is the fallback only for Qwen and Llama, preserving no-self-scrub routing.",
-    "Every Pilot B pipeline request, including each transient retry and shared scrubber fallback, is reserved before sending at the actual billing model rate; the USD 0.25 cap applies to the complete run.",
-    "The output reservation uses twice each stage max_tokens limit; phase 0 and utility perturb allow 256 tokens, style scrub 192, and both digit evaluations remain locked at 16.",
-    "The five-item, four-slot run has 100 baseline logical calls and at most 230 logical calls when every permitted shared scrubber and repair is used; the retry policy permits up to 920 HTTP attempts.",
-    "The runner accepts 5, 50, or 260 leading items. The cap is enforced before each HTTP attempt; rates are estimates and must be refreshed before a future live run."
+    "I map four tested model slots one-to-one to the model IDs and dated rates below.",
+    "I route style scrubbing through an independent utility model: Gemma for Qwen, Llama, and Mistral; Mistral for Gemma. Mistral is fallback only for Qwen and Llama, so no model scrubs its own output.",
+    "I reserve each request and transient retry before sending at the actual billed-model rate. Pilot B is capped at USD 0.25 and the 50-item Pilot A entrypoint at USD 0.50.",
+    "I reserve twice each stage max_tokens limit; phase 0 and utility perturb allow 256 tokens, style scrub 192, and both digit evaluations remain locked at 16.",
+    "The five-item run has 100 baseline logical calls and at most 230 logical calls with route-specific fallback and repairs; three transient retries permit at most 920 HTTP attempts.",
+    "I accept 5, 50, or 260 leading items. My Pilot A entrypoint locks 50 items and a USD 0.50 cap; the 260-item size remains a separately classified confirmatory run. Rates are estimates and must be refreshed before a future live run."
   ],
   "models": {
     "qwen_72b": {
@@ -112,6 +112,11 @@
     "maximum_logical_calls_with_fallback_for_default_items": 230,
     "maximum_http_attempts_with_retries_for_default_items": 920,
     "output_token_reservation_multiplier": 2,
-    "budget_cap_usd": 0.25
+    "maximum_budget_usd": 0.5,
+    "budget_cap_usd_by_num_items": {
+      "5": 0.25,
+      "50": 0.5,
+      "260": 0.25
+    }
   }
 }

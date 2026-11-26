@@ -6,3 +6,5 @@ MANIFEST_SHA256.txt text eol=lf
 *.log text eol=lf
 *.jsonl text eol=lf
 SHA256SUMS.txt text eol=lf
+*.ipynb text eol=lf
+.gitattributes text eol=lf
