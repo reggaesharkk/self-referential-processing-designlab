@@ -1,7 +1,7 @@
 {
-  "schema": "designlab-live-run-accountability-v4",
+  "schema": "designlab-live-run-accountability-v5",
   "as_of_date": "2026-11-26",
-  "source_basis": "local receipts, user-supplied run archives, and published PSI result files; not provider billing logs",
+  "source_basis": "local receipts including four supplied Pilot B archives, September and November engineering records, and published PSI result files; not provider billing logs",
   "engineering_connectivity_post_requests": {
     "2026-09-27": {
       "count": 6,
@@ -26,10 +26,10 @@
     }
   },
   "pilot_a_runs_evidenced": 0,
-  "pilot_b_runs_evidenced": 3,
-  "pilot_b_calls_started_total": 120,
-  "pilot_b_responses_total": 120,
-  "pilot_b_estimated_spend_usd_total": 0.00667538,
+  "pilot_b_runs_evidenced": 4,
+  "pilot_b_calls_started_total": 190,
+  "pilot_b_responses_total": 190,
+  "pilot_b_estimated_spend_usd_total": 0.01018135,
   "pilot_b_runs": [
     {
       "run_number": 1,
@@ -121,12 +121,53 @@
       },
       "model_slots_with_full_five_item_pipeline": 1,
       "classification": "prospective_pilot_b_partial_model_coverage_not_confirmatory_study"
+    },
+    {
+      "run_number": 4,
+      "source_file": "v9_0_pilot_b_results (3).zip",
+      "calls_started": 70,
+      "responses": 70,
+      "http_status_counts": {
+        "200": 70
+      },
+      "estimated_spend_usd": 0.00350597,
+      "budget_reserved_usd": 0.02412054,
+      "budget_cap_usd": 0.25,
+      "receipt_sha256": "32a7b3323613f2ac99ee80791916b5b124093a28ad6048b8966e34221e2b7c74",
+      "source_zip_sha256": "50618f7279799d08f562490455f261bd024094617b72f95ca9d37f799f116f1b",
+      "items_with_call_records": [
+        "TR_01",
+        "TR_02",
+        "TR_03",
+        "TR_04",
+        "TR_05"
+      ],
+      "calls_by_model_slot": {
+        "qwen_72b": 7,
+        "gemma_27b": 26,
+        "llama_70b": 7,
+        "mistral_24b": 30
+      },
+      "successful_item_stage_pairs_by_model_slot": {
+        "qwen_72b": 2,
+        "gemma_27b": 25,
+        "llama_70b": 2,
+        "mistral_24b": 25
+      },
+      "full_item_pipelines_by_model_slot": {
+        "qwen_72b": false,
+        "gemma_27b": true,
+        "llama_70b": false,
+        "mistral_24b": true
+      },
+      "confirmatory_data_collected": false,
+      "classification": "prospective_pilot_b_partial_model_coverage_not_confirmatory_study"
     }
   ],
   "confirmatory_study_runs_evidenced": 0,
-  "designlab_documented_model_inference_post_calls_total": 130,
+  "designlab_documented_model_inference_post_calls_total": 200,
   "designlab_provider_catalog_metadata_get_requests": 3,
-  "designlab_provider_http_requests_total_including_metadata": 133,
+  "designlab_provider_http_requests_total_including_metadata": 203,
   "psi_live_colab_runs_evidenced": 1,
   "psi_live_result_rows": 5,
   "psi_documented_local_t4_rows": 4,
@@ -138,12 +179,12 @@
   "api_keys_read_or_logged": false,
   "new_provider_requests_sent_by_assistant_during_audit": 0,
   "frozen_v8_6_3_files_modified": false,
-  "documented_live_experimental_executions_across_designlab_and_psi": 4,
+  "documented_live_experimental_executions_across_designlab_and_psi": 5,
   "pre_run_3_colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
   "pre_run_3_colab_bundle_bytes": 65722,
   "pre_run_3_colab_bundle_members": 24,
   "pre_run_3_colab_bundle_credential_shaped_matches": 0,
   "earlier_colab_bundle_sha256": "0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035",
   "colab_bundle_sha256": null,
-  "colab_bundle_sha256_note": "I record the rebuilt bundle hash outside this archive because this run ledger is itself included in the bundle."
+  "colab_bundle_sha256_note": "The current bundle hash is recorded in D:\\Self_Referential_DesignLab_Audit_2026-11-26\\RUN4_STABILIZATION_PUBLICATION_2026-11-26.md because this ledger is included inside the bundle."
 }

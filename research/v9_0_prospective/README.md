@@ -1,6 +1,6 @@
 # My prospective v9 runner
 
-I keep my prospective v9 connectivity and Pilot B runner here. I added this work without changing my frozen v8.6.3 materials or tracking the frozen item pool. Both Python programs default to offline dry runs; the live records below came from separate executed runs.
+I keep my prospective v9 connectivity and Pilot B runner here. I added this work without changing my frozen v8.6.3 materials or tracking the frozen item pool. Both Python programs default to offline dry runs. I keep the one-code-cell [Colab launcher](DesignLab_v9_0_Colab_PilotB.ipynb) beside the runner; it reads OPENROUTER_API_KEY from Colab Secrets, runs the connectivity check first, and starts the default five-item Pilot B only if all four model probes pass. The live records below came from separate executed runs.
 
 I use `MANIFEST_SHA256.txt` to verify the six root source and support files listed there. It does not hash itself. I keep the live receipts and their source archives under `pilot_receipts/`. My `.gitattributes` file keeps source line endings stable across Windows and Linux.
 
@@ -33,7 +33,7 @@ I add `--execute` only when I intend to send live engineering requests. My defau
 
 ## My prospective Pilot B pipeline
 
-I run the first five verified pool rows through these stages for each model slot:
+I select 5 items by default, or 50/260 with --num-items, from the verified pool and run the selected rows through these stages for each tested model slot:
 
 1. Phase 0 harvest, capped at 256 output tokens.
 2. Utility-preserving perturbation, capped at 256 output tokens.
@@ -41,20 +41,18 @@ I run the first five verified pool rows through these stages for each model slot
 4. Phase 1 utility digit evaluation, strictly capped at 16 output tokens.
 5. Domain 2 style-and-utility digit evaluation, strictly capped at 16 output tokens.
 
-I allow at most four targeted style-scrub repairs when word count is the only blocker. The base prompt and each repair use the same instruction: “Write 3 plain, neutral sentences totaling strictly 48 to 52 whitespace-separated words (minimum 45, maximum 55).” Each repair states the exact current count, targets 48–52 words, and remains inside the 45–55 acceptance window. If the rewrite still falls outside the locked window, or another blocker remains, I fail that model/item path closed. My baseline is 100 calls across four models and five items; my maximum is 45 calls per model and 180 overall, including all four retries per item/model. I reserve each request before sending it, using the stage token cap with twice that output allowance for reservation, under the same USD 0.25 estimated-spend cap. I record token counts, latency, and estimated cost per model. The cap is an estimate guard, not a provider invoice guarantee.
+I route utility_style_scrub through an independent shared utility model: Gemma scrubs Qwen, Llama, and Mistral outputs; Mistral scrubs Gemma outputs. If Gemma fails four word-count repairs for Qwen or Llama, Mistral is the independent fallback. I do not self-scrub and do not permit a fallback that would self-scrub. I allow at most four targeted style-scrub repairs when word count is the only blocker. The initial prompt and each repair ask for three plain, neutral sentences totaling strictly 48–52 whitespace-separated words (minimum 45, maximum 55); each repair includes the exact current count. My five-item baseline is 100 logical calls. With route-specific fallback and four repairs, the maximum is 230 logical calls (Qwen 70, Gemma 45, Llama 70, Mistral 45), or 920 physical HTTP attempts with three transient retries per attempt. I reserve each Pilot B pipeline request and retry before sending it at the actual billed model rate, under the USD 0.25 estimated-spend cap. I record tokens, latency, and estimated cost by tested slot and billing model. This cap is a local estimate guard, not a provider invoice guarantee. I retry only HTTP 429/503, with 2/4/8-second backoff and at least 0.35 seconds between HTTP attempts.
 
 I validate the pool offline with:
 
 ```powershell
-python research/v9_0_prospective/pilot_b_v9.py --items 'C:\path\to\items_pool_v1.json'
+python research/v9_0_prospective/pilot_b_v9.py --items 'C:\path\to\items_pool_v1.json' --num-items 5
 ```
 
 I add `--execute` only for a live Pilot B run. My reports retain item IDs and hashes, not item text, generated text, headers, or key values.
 
 ## Live records I have
 
-I have three prospective Pilot B receipts. My first records 10 calls, 10 responses, and USD 0.00053603 estimated spend for `TR_01`. My second records 30 calls, 30 HTTP 200 responses, and USD 0.00119524 estimated spend; its four model slots were unavailable at the end. My third records 80 calls, 80 HTTP 200 responses, and USD 0.00494411 estimated spend. In that run, Gemma completed all 25 item-stage pairs across `TR_01`–`TR_05`. Llama completed 17 of 25 pairs, with all five stages complete for `TR_01`–`TR_03`; Qwen completed 2 pairs and Mistral 7 pairs. I archive the third receipt under [`pilot_receipts/2026-11-26_run_3/`](pilot_receipts/2026-11-26_run_3/).
+I have four prospective Pilot B receipts. Run 1 records 10 calls, 10 responses, and USD 0.00053603 estimated spend. Run 2 records 30 calls, 30 HTTP 200 responses, and USD 0.00119524 estimated spend; no slot completed its full five-item pipeline. Run 3 records 80 calls, 80 HTTP 200 responses, and USD 0.00494411 estimated spend: Gemma completed 25/25 pairs, Llama 17/25, Qwen 2, and Mistral 7. Run 4 records 70 calls, 70 HTTP 200 responses, and USD 0.00350597 estimated spend. Gemma (google/gemma-2-27b-it) and Mistral (mistralai/mistral-small-24b-instruct-2501) each completed 25/25 pairs with complete_pipeline: true. I archive it under [pilot_receipts/2026-11-26_run_4/](pilot_receipts/2026-11-26_run_4/).
 
-The request accompanying my third source ZIP stated SHA-256 `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430680`, while the supplied archive bytes hash to `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600`. I preserved the supplied ZIP and recorded the discrepancy in the run 3 reconciliation note and manifest.
-
-Across my three Pilot B runs, I recorded 120 calls and USD 0.00667538 estimated spend. I also recorded four v9 engineering connectivity probes, all HTTP 200, and six 27 September engineering probes: four HTTP 200, one HTTP 400, and one HTTP 404. I found three provider catalog metadata GET requests. I found no Pilot A run and no confirmatory study run; `confirmatory_data_collected` is false in all three Pilot B receipts. My cumulative counts and limitations are in [`provenance_2026_11_26/`](provenance_2026_11_26/).
+Across those four Pilot B runs, I recorded 190 calls, 190 responses, and USD 0.01018135 estimated spend. I also recorded four November engineering connectivity probes, all HTTP 200, and six September engineering probes: four HTTP 200, one HTTP 400, and one HTTP 404. I found three provider catalog metadata GET requests. I found no Pilot A run and no confirmatory study run. The 260-item option is classified as confirmatory when explicitly executed; I have not executed it. The new Colab notebook defaults to five items and records actual billed-model token and cost totals. My cumulative counts and limitations are in [provenance_2026_11_26/](provenance_2026_11_26/).

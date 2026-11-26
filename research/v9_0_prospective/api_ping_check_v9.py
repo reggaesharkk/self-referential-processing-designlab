@@ -19,13 +19,18 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 PROMPT = "Engineering connectivity test. Reply with exactly the single digit 1."
 TEMPERATURE = 0.0
 TOP_P = 1.0
 MAX_TOKENS = 16
 TIMEOUT_SECONDS = 30
+MAX_TRANSIENT_RETRIES = 3
+TRANSIENT_HTTP_STATUSES = (429, 503)
+RETRY_BACKOFF_SECONDS = (2.0, 4.0, 8.0)
+MIN_INTER_CALL_SPACING_SECONDS = 0.35
+_LAST_HTTP_COMPLETED_MONOTONIC: float | None = None
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 ENV_BY_PROVIDER = {"openrouter": "OPENROUTER_API_KEY"}
 CANDIDATES: list[dict[str, str]] = [
@@ -137,11 +142,28 @@ def _payload(spec: dict[str, str], messages: list[dict[str, str]],
     }
 
 
-def execute_request(spec: dict[str, str], api_key: str,
-                    messages: list[dict[str, str]], max_tokens: int,
-                    timeout_seconds: int = TIMEOUT_SECONDS,
-                    logprobs: int | None = None) -> dict[str, Any]:
-    """Make one request; the API key is used only in the HTTP Authorization header."""
+def reset_request_pacing_state() -> None:
+    """Reset process-local pacing state; exposed for deterministic offline checks."""
+    global _LAST_HTTP_COMPLETED_MONOTONIC
+    _LAST_HTTP_COMPLETED_MONOTONIC = None
+
+
+def execute_request(
+    spec: dict[str, str],
+    api_key: str,
+    messages: list[dict[str, str]],
+    max_tokens: int,
+    timeout_seconds: int = TIMEOUT_SECONDS,
+    logprobs: int | None = None,
+    before_attempt: Callable[[dict[str, Any]], None] | None = None,
+    authorize_retry: Callable[[dict[str, Any]], dict[str, Any] | None] | None = None,
+    on_retry: Callable[[dict[str, Any]], None] | None = None,
+    sleep_fn: Callable[[float], None] | None = None,
+    monotonic_fn: Callable[[], float] | None = None,
+    urlopen_fn: Callable[..., Any] | None = None,
+) -> dict[str, Any]:
+    """Make a redacted, paced request with bounded retries for HTTP 429/503 only."""
+    global _LAST_HTTP_COMPLETED_MONOTONIC
     if spec.get("env_var") != "OPENROUTER_API_KEY":
         raise ValueError("Candidate must use OPENROUTER_API_KEY")
     body = json.dumps(_payload(spec, messages, max_tokens, logprobs),
@@ -152,30 +174,117 @@ def execute_request(spec: dict[str, str], api_key: str,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
         method="POST",
     )
-    started = time.monotonic()
-    try:
-        with urllib.request.urlopen(req, timeout=timeout_seconds) as response:
-            status = int(response.status)
-            raw = response.read(2_000_001)
-        if len(raw) > 2_000_000:
-            return {"http_status": status, "latency_ms": int((time.monotonic()-started)*1000),
-                    "payload": None, "error_category": "response_too_large"}
+    sleep = sleep_fn or time.sleep
+    clock = monotonic_fn or time.monotonic
+    open_url = urlopen_fn or urllib.request.urlopen
+    logical_started = clock()
+    attempts: list[dict[str, Any]] = []
+    retry_events: list[dict[str, Any]] = []
+    pending_reservation: dict[str, Any] | None = None
+    response: dict[str, Any] = {
+        "http_status": None, "latency_ms": 0, "payload": None,
+        "error_category": "no_request_attempt",
+    }
+
+    for attempt_number in range(1, MAX_TRANSIENT_RETRIES + 2):
+        spacing_wait = 0.0
+        if _LAST_HTTP_COMPLETED_MONOTONIC is not None:
+            spacing_wait = max(
+                0.0,
+                MIN_INTER_CALL_SPACING_SECONDS - (clock() - _LAST_HTTP_COMPLETED_MONOTONIC),
+            )
+            if spacing_wait:
+                sleep(spacing_wait)
+        attempt_record: dict[str, Any] = {
+            "attempt_number": attempt_number,
+            "retry_index": attempt_number - 1,
+            "request_state": "started",
+            "http_status": None,
+            "inter_call_wait_seconds": round(spacing_wait, 3),
+        }
+        if pending_reservation is not None:
+            attempt_record["pre_request_budget_reservation"] = pending_reservation
+            pending_reservation = None
+        attempts.append(attempt_record)
+        if before_attempt is not None:
+            before_attempt(attempt_record)
+
+        request_started = clock()
         try:
-            payload = json.loads(raw.decode("utf-8"))
-            error = None if status == 200 else "http_non_200"
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            payload, error = None, "invalid_json_response"
-        return {"http_status": status, "latency_ms": int((time.monotonic()-started)*1000),
-                "payload": payload, "error_category": error}
-    except urllib.error.HTTPError as exc:
-        return {"http_status": int(exc.code), "latency_ms": int((time.monotonic()-started)*1000),
-                "payload": None, "error_category": "http_error"}
-    except (urllib.error.URLError, socket.timeout, TimeoutError):
-        return {"http_status": None, "latency_ms": int((time.monotonic()-started)*1000),
-                "payload": None, "error_category": "transport_error"}
-    except Exception:
-        return {"http_status": None, "latency_ms": int((time.monotonic()-started)*1000),
-                "payload": None, "error_category": "unexpected_transport_error"}
+            with open_url(req, timeout=timeout_seconds) as http_response:
+                status = int(http_response.status)
+                raw = http_response.read(2_000_001)
+            if len(raw) > 2_000_000:
+                response = {"http_status": status, "payload": None,
+                            "error_category": "response_too_large"}
+            else:
+                try:
+                    payload = json.loads(raw.decode("utf-8"))
+                    error = None if status == 200 else "http_non_200"
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    payload, error = None, "invalid_json_response"
+                response = {"http_status": status, "payload": payload,
+                            "error_category": error}
+        except urllib.error.HTTPError as exc:
+            response = {"http_status": int(exc.code), "payload": None,
+                        "error_category": "http_error"}
+            try:
+                exc.close()
+            except Exception:
+                pass
+        except (urllib.error.URLError, socket.timeout, TimeoutError):
+            response = {"http_status": None, "payload": None,
+                        "error_category": "transport_error"}
+        except Exception:
+            response = {"http_status": None, "payload": None,
+                        "error_category": "unexpected_transport_error"}
+        completed = clock()
+        _LAST_HTTP_COMPLETED_MONOTONIC = completed
+        attempt_record.update({
+            "request_state": "http_response_received" if response.get("http_status") is not None else "no_http_response",
+            "http_status": response.get("http_status"),
+            "latency_ms": max(0, int((completed - request_started) * 1000)),
+            "error_category": response.get("error_category"),
+        })
+
+        status = response.get("http_status")
+        if status not in TRANSIENT_HTTP_STATUSES:
+            break
+        if attempt_number > MAX_TRANSIENT_RETRIES:
+            response["error_category"] = "transient_http_retries_exhausted"
+            response["transient_retries_exhausted"] = True
+            break
+
+        backoff = RETRY_BACKOFF_SECONDS[attempt_number - 1]
+        event: dict[str, Any] = {
+            "retry_number": attempt_number,
+            "after_attempt_number": attempt_number,
+            "next_attempt_number": attempt_number + 1,
+            "after_http_status": status,
+            "backoff_seconds": backoff,
+            "retry_scheduled": True,
+        }
+        reservation = authorize_retry(event) if authorize_retry is not None else {}
+        if authorize_retry is not None and reservation is None:
+            event["retry_scheduled"] = False
+            event["retry_block_reason"] = "pre_request_spend_cap"
+            response["error_category"] = "pre_request_spend_cap_retry"
+            response["retry_blocked_by_budget"] = True
+        else:
+            pending_reservation = reservation
+        retry_events.append(event)
+        if on_retry is not None:
+            on_retry(event)
+        if not event["retry_scheduled"]:
+            break
+        sleep(backoff)
+
+    response["latency_ms"] = max(0, int((clock() - logical_started) * 1000))
+    response["request_attempts"] = attempts
+    response["retry_events"] = retry_events
+    response["http_attempt_count"] = len(attempts)
+    response["retry_count"] = max(0, len(attempts) - 1)
+    return response
 
 
 def _result(spec: dict[str, str], response: dict[str, Any]) -> dict[str, Any]:
@@ -204,6 +313,8 @@ def _result(spec: dict[str, str], response: dict[str, Any]) -> dict[str, Any]:
         "reasoning_tokens": reasoning,
         "input_tokens": data.get("input_tokens"), "output_tokens": data.get("output_tokens"),
         "total_tokens": data.get("total_tokens"), "error_category": response.get("error_category"),
+        "http_attempt_count": response.get("http_attempt_count", 1),
+        "retry_count": response.get("retry_count", 0),
     }
 
 
@@ -222,9 +333,9 @@ def _tracked_request(
     report: dict[str, Any], secrets: list[str], timeout: int,
 ) -> dict[str, Any]:
     messages = [{"role": "user", "content": PROMPT}]
-    call_id = f"http-{len(report['api_request_ledger']) + 1:04d}"
+    call_id = f"probe-{len(report['api_request_ledger']) + 1:04d}"
     request_body = _payload(spec, messages, MAX_TOKENS)
-    attempt = {
+    attempt: dict[str, Any] = {
         "call_id": call_id, "slot": spec["slot"], "provider": spec["provider"],
         "model_id": spec["model_id"], "endpoint": spec["endpoint"],
         "request_state": "started", "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -235,13 +346,34 @@ def _tracked_request(
             json.dumps(request_body, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         ).hexdigest(),
         "max_tokens": MAX_TOKENS, "temperature": TEMPERATURE, "top_p": TOP_P,
-        "auth_env_var": "OPENROUTER_API_KEY",
+        "auth_env_var": "OPENROUTER_API_KEY", "http_attempts": [], "retry_events": [],
     }
     report["api_request_ledger"].append(attempt)
-    report["http_calls_started"] = len(report["api_request_ledger"])
-    _save(report, output, secrets)
 
-    response = execute_request(spec, api_key, messages, MAX_TOKENS, timeout_seconds=timeout)
+    def checkpoint() -> None:
+        report["http_calls_started"] = sum(
+            len(call.get("http_attempts", [])) for call in report["api_request_ledger"]
+        )
+        report["http_responses_received"] = sum(
+            1 for call in report["api_request_ledger"]
+            for http_attempt in call.get("http_attempts", [])
+            if http_attempt.get("http_status") is not None
+        )
+        _save(report, output, secrets)
+
+    def before_attempt(http_attempt: dict[str, Any]) -> None:
+        attempt["http_attempts"].append(http_attempt)
+        checkpoint()
+
+    def on_retry(event: dict[str, Any]) -> None:
+        attempt["retry_events"].append(event)
+        checkpoint()
+
+    checkpoint()
+    response = execute_request(
+        spec, api_key, messages, MAX_TOKENS, timeout_seconds=timeout,
+        before_attempt=before_attempt, on_retry=on_retry,
+    )
     row = _result(spec, response)
     row["call_id"] = call_id
     attempt.update({
@@ -249,13 +381,10 @@ def _tracked_request(
         "completed_utc": datetime.now(timezone.utc).isoformat(),
         "http_status": response.get("http_status"), "latency_ms": response.get("latency_ms"),
         "error_category": response.get("error_category"), "available": row["available"],
+        "retry_count": response.get("retry_count", 0),
     })
-    report["http_responses_received"] = sum(
-        1 for call in report["api_request_ledger"]
-        if call["request_state"] == "http_response_received"
-    )
     report["results"].append(row)
-    _save(report, output, secrets)
+    checkpoint()
     return row
 
 
@@ -268,7 +397,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=int, default=TIMEOUT_SECONDS)
     args = parser.parse_args(argv)
     if not args.execute:
-        print("DRY RUN: no keys read and no HTTP requests sent; planned calls=4.")
+        print(
+            "DRY RUN: no keys read and no HTTP requests sent; planned probes=4; "
+            "maximum HTTP attempts=16 with up to three 429/503 retries each."
+        )
         return 0
     if args.timeout < 1:
         print("BLOCKED: timeout must be at least 1 second")
@@ -292,14 +424,21 @@ def main(argv: list[str] | None = None) -> int:
         "max_tokens": MAX_TOKENS, "confirmatory_data": False,
         "endpoint": OPENROUTER_ENDPOINT, "auth_env_var": "OPENROUTER_API_KEY",
         "connectivity_probe_count": len(CANDIDATES), "http_calls_started": 0,
-        "http_responses_received": 0, "api_request_ledger": [], "results": [],
+        "http_responses_received": 0,
+        "transient_retry_policy": {
+            "statuses": list(TRANSIENT_HTTP_STATUSES),
+            "maximum_retries": MAX_TRANSIENT_RETRIES,
+            "backoff_seconds": list(RETRY_BACKOFF_SECONDS),
+            "minimum_inter_call_spacing_seconds": MIN_INTER_CALL_SPACING_SECONDS,
+        },
+        "api_request_ledger": [], "results": [],
     }
     _save(report, output, [key])
     try:
         for spec in CANDIDATES:
             row = _tracked_request(spec, key, output, report, [key], args.timeout)
             print(f"{row['slot']} {row['model_id']}: HTTP {row['http_status']} "
-                  f"available={row['available']}")
+                  f"available={row['available']} retries={row.get('retry_count', 0)}")
     finally:
         _save(report, output, [key])
     all_available = len(report["results"]) == len(CANDIDATES) and all(

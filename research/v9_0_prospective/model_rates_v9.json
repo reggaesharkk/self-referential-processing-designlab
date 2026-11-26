@@ -3,12 +3,12 @@
   "currency": "USD",
   "provider": "openrouter",
   "notes": [
-    "Four named candidate slots map one-to-one to model IDs and rates below.",
-    "Rates are a versioned estimate snapshot and must be refreshed before a future live run.",
-    "The runner reserves estimated maximum input/output cost before each request and stops before the next request if the cumulative reservation would exceed its USD 0.25 cap.",
+    "Four tested model slots map one-to-one to the model IDs and rates below.",
+    "The shared neutral utility scrubber routes each tested model through an independent model: Gemma for Qwen, Llama, and Mistral outputs; Mistral for Gemma outputs. Mistral is the fallback only for Qwen and Llama, preserving no-self-scrub routing.",
+    "Every Pilot B pipeline request, including each transient retry and shared scrubber fallback, is reserved before sending at the actual billing model rate; the USD 0.25 cap applies to the complete run.",
     "The output reservation uses twice each stage max_tokens limit; phase 0 and utility perturb allow 256 tokens, style scrub 192, and both digit evaluations remain locked at 16.",
-    "The five-item, four-slot run has 100 baseline calls and at most 180 calls with four word-count repairs per item/model; every retry is separately reserved under the same USD 0.25 cap.",
-    "The USD 0.25 cap is enforced by this runner using the listed estimates; it is not an upstream provider billing limit."
+    "The five-item, four-slot run has 100 baseline logical calls and at most 230 logical calls when every permitted shared scrubber and repair is used; the retry policy permits up to 920 HTTP attempts.",
+    "The runner accepts 5, 50, or 260 leading items. The cap is enforced before each HTTP attempt; rates are estimates and must be refreshed before a future live run."
   ],
   "models": {
     "qwen_72b": {
@@ -61,12 +61,56 @@
       "repairs_only_when_word_count_is_only_blocker": true,
       "instruction": "Write 3 plain, neutral sentences totaling strictly 48 to 52 whitespace-separated words (minimum 45, maximum 55)."
     },
-    "pilot_items_per_run": 5,
+    "shared_utility_scrubber": {
+      "primary_slot": "gemma_27b",
+      "fallback_slot": "mistral_24b",
+      "avoid_self_scrub": true,
+      "routes_by_tested_slot": {
+        "qwen_72b": {
+          "primary_slot": "gemma_27b",
+          "fallback_slot": "mistral_24b"
+        },
+        "gemma_27b": {
+          "primary_slot": "mistral_24b",
+          "fallback_slot": null
+        },
+        "llama_70b": {
+          "primary_slot": "gemma_27b",
+          "fallback_slot": "mistral_24b"
+        },
+        "mistral_24b": {
+          "primary_slot": "gemma_27b",
+          "fallback_slot": null
+        }
+      }
+    },
+    "transient_http_retry": {
+      "statuses": [
+        429,
+        503
+      ],
+      "maximum_retries": 3,
+      "backoff_seconds": [
+        2.0,
+        4.0,
+        8.0
+      ],
+      "minimum_inter_call_spacing_seconds": 0.35
+    },
+    "num_items": {
+      "default": 5,
+      "supported": [
+        5,
+        50,
+        260
+      ]
+    },
     "model_slots_per_run": 4,
     "baseline_calls_per_item_per_model": 5,
-    "maximum_calls_per_item_per_model": 9,
-    "baseline_total_calls": 100,
-    "maximum_total_calls": 180,
+    "maximum_logical_calls_per_item_per_model_with_fallback": 14,
+    "baseline_total_logical_calls_for_default_items": 100,
+    "maximum_logical_calls_with_fallback_for_default_items": 230,
+    "maximum_http_attempts_with_retries_for_default_items": 920,
     "output_token_reservation_multiplier": 2,
     "budget_cap_usd": 0.25
   }
