@@ -1,0 +1,84 @@
+{
+  "schema": "designlab-live-run-accountability-v3",
+  "as_of_date": "2026-11-26",
+  "source_basis": "local receipts, user-supplied run archives, and published PSI result files; not provider billing logs",
+  "engineering_connectivity_post_requests": {
+    "2026-09-27": {
+      "count": 6,
+      "http_status_counts": {
+        "200": 4,
+        "400": 1,
+        "404": 1
+      }
+    },
+    "2026-11-26": {
+      "count": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "run_classification": "engineering_connectivity_not_study_data"
+    },
+    "total_count": 10,
+    "http_status_counts_total": {
+      "200": 8,
+      "400": 1,
+      "404": 1
+    }
+  },
+  "pilot_a_runs_evidenced": 0,
+  "pilot_b_runs_evidenced": 2,
+  "pilot_b_calls_started_total": 40,
+  "pilot_b_responses_total": 40,
+  "pilot_b_estimated_spend_usd_total": 0.00173127,
+  "pilot_b_runs": [
+    {
+      "run_number": 1,
+      "calls_started": 10,
+      "responses": 10,
+      "estimated_spend_usd": 0.00053603,
+      "receipt_sha256": "db82e60bf1aaffa3ecd76909c34aa1a90160224d5e2b5f8f6b3afb346fcdcfc3",
+      "source_zip_sha256": "7d0d9103e112288137bd52cc315f0560b0f20df45c23e70cb2140e888902b4a7",
+      "items_with_call_records": [
+        "TR_01"
+      ],
+      "classification": "prospective_pilot_b_not_confirmatory_study"
+    },
+    {
+      "run_number": 2,
+      "timestamp_utc": "2026-11-26T07:20:39.910565+00:00",
+      "calls_started": 30,
+      "responses": 30,
+      "http_status_counts": {
+        "200": 30
+      },
+      "estimated_spend_usd": 0.00119524,
+      "budget_cap_usd": 0.25,
+      "receipt_sha256": "127a8dc8e1125ec43a41cb60255b3e6baddfa0ad612721228a98970b7b786443",
+      "source_zip_sha256": "1a1cd21d6abbda29426a60e4e65135ab0311ac3e10139d207e917b85ed0c7188",
+      "items_with_call_records": [
+        "TR_01",
+        "TR_02"
+      ],
+      "call_records_unavailable": 14,
+      "style_scrub_word_window_blocker_records": 13,
+      "finish_reason_length_blocker_records": 1,
+      "model_slots_available_at_end": 0,
+      "classification": "prospective_pilot_b_not_confirmatory_study_partial"
+    }
+  ],
+  "confirmatory_study_runs_evidenced": 0,
+  "designlab_documented_model_inference_post_calls_total": 50,
+  "designlab_provider_catalog_metadata_get_requests": 3,
+  "designlab_provider_http_requests_total_including_metadata": 53,
+  "psi_live_colab_runs_evidenced": 1,
+  "psi_live_result_rows": 5,
+  "psi_documented_local_t4_rows": 4,
+  "psi_documented_external_api_rows": 1,
+  "psi_external_api_request_count": null,
+  "psi_external_api_request_count_known": false,
+  "items_pool_bytes": 75875,
+  "items_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
+  "api_keys_read_or_logged": false,
+  "new_provider_requests_sent_by_assistant_during_audit": 0,
+  "frozen_v8_6_3_files_modified": false
+}
