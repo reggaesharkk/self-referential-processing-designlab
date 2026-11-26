@@ -6,6 +6,8 @@
     "Four named candidate slots map one-to-one to model IDs and rates below.",
     "Rates are a versioned estimate snapshot and must be refreshed before a future live run.",
     "The runner reserves estimated maximum input/output cost before each request and stops before the next request if the cumulative reservation would exceed its USD 0.25 cap.",
+    "The output reservation uses twice each stage max_tokens limit; phase 0 and utility perturb allow 256 tokens, style scrub 128, and both digit evaluations remain locked at 16.",
+    "The five-item, four-slot run has 100 baseline calls and at most 180 calls with four word-count repairs per item/model; every retry is separately reserved under the same USD 0.25 cap.",
     "The USD 0.25 cap is enforced by this runner using the listed estimates; it is not an upstream provider billing limit."
   ],
   "models": {
@@ -37,5 +39,34 @@
       "output_usd_per_1m_tokens": 0.08,
       "source": "https://openrouter.ai/mistralai/mistral-small-24b-instruct-2501/pricing"
     }
+  },
+  "runner_policy": {
+    "stage_max_tokens": {
+      "phase0_harvest": 256,
+      "utility_perturb": 256,
+      "utility_style_scrub": 128,
+      "phase1_digit_evaluation": 16,
+      "domain2_digit_evaluation": 16
+    },
+    "style_scrub": {
+      "locked_word_window": [
+        45,
+        55
+      ],
+      "target_word_window": [
+        48,
+        52
+      ],
+      "maximum_repair_attempts": 4,
+      "repairs_only_when_word_count_is_only_blocker": true
+    },
+    "pilot_items_per_run": 5,
+    "model_slots_per_run": 4,
+    "baseline_calls_per_item_per_model": 5,
+    "maximum_calls_per_item_per_model": 9,
+    "baseline_total_calls": 100,
+    "maximum_total_calls": 180,
+    "output_token_reservation_multiplier": 2,
+    "budget_cap_usd": 0.25
   }
 }

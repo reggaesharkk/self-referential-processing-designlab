@@ -28,14 +28,16 @@ EXPECTED_ITEMS_POOL_SHA256 = (
 )
 DEFAULT_BUDGET_USD = 0.25
 MAX_BUDGET_USD = 0.25
-MAX_STYLE_REPAIRS = 2
+PILOT_ITEMS_PER_RUN = 5
+RESERVATION_OUTPUT_TOKEN_MULTIPLIER = 2
+MAX_STYLE_REPAIRS = 4
 STYLE_WORD_MIN = 45
 STYLE_WORD_MAX = 55
 STYLE_WORD_TARGET_MIN = 48
 STYLE_WORD_TARGET_MAX = 52
 MAX_TOKENS = {
-    "phase0_harvest": 128,
-    "utility_perturb": 128,
+    "phase0_harvest": 256,
+    "utility_perturb": 256,
     "utility_style_scrub": 128,
     "phase1_digit_evaluation": 16,
     "domain2_digit_evaluation": 16,
@@ -62,7 +64,7 @@ class SpendGuard:
         output_rate: float,
     ) -> tuple[int, float] | None:
         input_upper = self.prompt_upper_bound(messages)
-        output_upper = output_limit * 2
+        output_upper = output_limit * RESERVATION_OUTPUT_TOKEN_MULTIPLIER
         amount = (input_upper * input_rate + output_upper * output_rate) / 1_000_000
         if self.reserved_usd + amount > self.cap_usd:
             return None
@@ -116,7 +118,7 @@ def load_items(path: Path) -> tuple[str, list[dict[str, Any]]]:
     )
     if not valid:
         raise ValueError("BLOCKED: pool hash matched but required 260-item schema did not")
-    return actual, data[:5]
+    return actual, data[:PILOT_ITEMS_PER_RUN]
 
 
 def load_rate_card(path: Path) -> tuple[dict[str, dict[str, Any]], str]:
@@ -128,6 +130,25 @@ def load_rate_card(path: Path) -> tuple[dict[str, dict[str, Any]], str]:
             or document.get("provider") != "openrouter"
             or not isinstance(document.get("models"), dict)):
         raise ValueError("BLOCKED: rate-card schema is invalid")
+    expected_policy = {
+        "stage_max_tokens": MAX_TOKENS,
+        "style_scrub": {
+            "locked_word_window": [STYLE_WORD_MIN, STYLE_WORD_MAX],
+            "target_word_window": [STYLE_WORD_TARGET_MIN, STYLE_WORD_TARGET_MAX],
+            "maximum_repair_attempts": MAX_STYLE_REPAIRS,
+            "repairs_only_when_word_count_is_only_blocker": True,
+        },
+        "pilot_items_per_run": PILOT_ITEMS_PER_RUN,
+        "model_slots_per_run": len(CANDIDATES),
+        "baseline_calls_per_item_per_model": len(MAX_TOKENS),
+        "maximum_calls_per_item_per_model": len(MAX_TOKENS) + MAX_STYLE_REPAIRS,
+        "baseline_total_calls": len(CANDIDATES) * PILOT_ITEMS_PER_RUN * len(MAX_TOKENS),
+        "maximum_total_calls": len(CANDIDATES) * PILOT_ITEMS_PER_RUN * (len(MAX_TOKENS) + MAX_STYLE_REPAIRS),
+        "output_token_reservation_multiplier": RESERVATION_OUTPUT_TOKEN_MULTIPLIER,
+        "budget_cap_usd": MAX_BUDGET_USD,
+    }
+    if document.get("runner_policy") != expected_policy:
+        raise ValueError("BLOCKED: rate-card runner policy does not match locked token, retry, call, and budget settings")
     expected_slots = {spec["slot"] for spec in CANDIDATES}
     if set(document["models"]) != expected_slots:
         raise ValueError("BLOCKED: rate-card slots do not match the four candidate slots 1-to-1")
@@ -231,7 +252,9 @@ def run_stage(
         "request_body_sha256": hashlib.sha256(
             json.dumps(request_body, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         ).hexdigest(),
+        "requested_max_tokens": output_cap,
         "reserved_input_tokens_upper_bound": input_upper,
+        "reserved_output_tokens_upper_bound": output_cap * RESERVATION_OUTPUT_TOKEN_MULTIPLIER,
         "budget_reservation_usd": reservation,
     }
     report["calls"].append(attempt)
@@ -315,7 +338,7 @@ def run_style_scrub_with_repairs(
     report: dict[str, Any],
     checkpoint: Any,
 ) -> tuple[dict[str, Any], str]:
-    """Run style scrub and allow at most two targeted word-count repairs."""
+    """Run style scrub and allow at most four targeted word-count repairs."""
     system = (
         "Neutralize stylistic framing while preserving the answer's utility and facts. "
         "Write 48 to 52 whitespace-delimited words, which is inside the locked "
@@ -382,7 +405,7 @@ def _aggregate(
                 "complete_pipeline": complete,
                 "calls_recorded": len(rows),
                 "calls_expected_baseline": len(item_ids) * len(required_stages),
-                "calls_max_with_two_style_repairs": len(item_ids) * (len(required_stages) + MAX_STYLE_REPAIRS),
+                "calls_max_with_four_style_repairs": len(item_ids) * (len(required_stages) + MAX_STYLE_REPAIRS),
                 "style_repair_calls": sum(
                     1 for c in rows
                     if c.get("stage") == "utility_style_scrub" and int(c.get("repair_attempt") or 0) > 0
@@ -425,7 +448,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.execute:
         print(
             "DRY RUN: frozen pool verified; first five items selected; "
-            "baseline calls=100, maximum with style repairs=140; "
+            "baseline calls=100, maximum with four style repairs=180; "
             "no keys read and no HTTP requests sent."
         )
         return 0
@@ -443,7 +466,7 @@ def main(argv: list[str] | None = None) -> int:
     keys = {name: os.environ[name] for name in ENV_BY_PROVIDER.values()}
     guard = SpendGuard(args.budget_usd)
     report: dict[str, Any] = {
-        "schema": "designlab-v9-pilot-b-v2",
+        "schema": "designlab-v9-pilot-b-v3",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "run_classification": "prospective_pilot_b_not_confirmatory_study",
         "confirmatory_data_collected": False,
@@ -468,8 +491,10 @@ def main(argv: list[str] | None = None) -> int:
              "endpoint": spec["endpoint"], "auth_env_var": spec["env_var"]}
             for spec in CANDIDATES
         ],
+        "stage_max_tokens": dict(MAX_TOKENS),
+        "output_token_reservation_multiplier": RESERVATION_OUTPUT_TOKEN_MULTIPLIER,
         "baseline_expected_http_calls": len(CANDIDATES) * len(items) * len(MAX_TOKENS),
-        "maximum_http_calls_with_style_repairs": len(CANDIDATES) * len(items) * (len(MAX_TOKENS) + MAX_STYLE_REPAIRS),
+        "maximum_http_calls_with_four_style_repairs": len(CANDIDATES) * len(items) * (len(MAX_TOKENS) + MAX_STYLE_REPAIRS),
         "style_scrub_repair_policy": {
             "locked_word_window": [STYLE_WORD_MIN, STYLE_WORD_MAX],
             "target_word_window": [STYLE_WORD_TARGET_MIN, STYLE_WORD_TARGET_MAX],
@@ -480,6 +505,10 @@ def main(argv: list[str] | None = None) -> int:
         "temperature": 0.0,
         "top_p": 1.0,
         "evaluation_max_tokens": 16,
+        "evaluation_stage_max_tokens_locked": {
+            "phase1_digit_evaluation": 16,
+            "domain2_digit_evaluation": 16,
+        },
         "budget_cap_usd": args.budget_usd,
         "pricing_snapshot_date": pricing_date,
         "budget_method": "pre-request UTF-8 byte and output-token reservation at versioned rate card",

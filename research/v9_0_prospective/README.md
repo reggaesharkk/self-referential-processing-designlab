@@ -35,13 +35,13 @@ I add `--execute` only when I intend to send live engineering requests. My defau
 
 I run the first five verified pool rows through these stages for each model slot:
 
-1. Phase 0 harvest.
-2. Utility-preserving perturbation.
-3. Utility style scrub in a locked 45–55 whitespace-delimited word window.
-4. Phase 1 utility digit evaluation, capped at 16 output tokens.
-5. Domain 2 style-and-utility digit evaluation, capped at 16 output tokens.
+1. Phase 0 harvest, capped at 256 output tokens.
+2. Utility-preserving perturbation, capped at 256 output tokens.
+3. Utility style scrub, capped at 128 output tokens and locked to a 45–55 whitespace-delimited word window.
+4. Phase 1 utility digit evaluation, strictly capped at 16 output tokens.
+5. Domain 2 style-and-utility digit evaluation, strictly capped at 16 output tokens.
 
-I allow at most two targeted style-scrub repairs when word count is the only blocker. Each repair states the exact current count and targets 48–52 words. If the rewrite still falls outside the locked window, or another blocker remains, I fail that model/item path closed. My baseline is 100 calls across four models and five items; the maximum with repairs is 140. I apply a USD 0.25 local estimated-spend cap to every original and repair request. I record token counts, latency, and estimated cost per model. The cap is an estimate guard, not a provider invoice guarantee.
+I allow at most four targeted style-scrub repairs when word count is the only blocker. Each repair states the exact current count and targets 48–52 words. If the rewrite still falls outside the locked window, or another blocker remains, I fail that model/item path closed. My baseline is 100 calls across four models and five items; my maximum is 45 calls per model and 180 overall, including all four retries per item/model. I reserve each request before sending it, using the stage token cap with twice that output allowance for reservation, under the same USD 0.25 estimated-spend cap. I record token counts, latency, and estimated cost per model. The cap is an estimate guard, not a provider invoice guarantee.
 
 I validate the pool offline with:
 
