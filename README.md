@@ -31,22 +31,25 @@ I added the 27 September provenance files without replacing the frozen specifica
 
 I keep the prospective runner and its receipts under [`research/v9_0_prospective/`](research/v9_0_prospective/). I verified the local `items_pool_v1.json` at 75,875 bytes with SHA-256 `128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3`; I do not track or modify that pool in Git.
 
-I have two documented prospective Pilot B executions:
+I have three documented prospective Pilot B executions:
 
-- I recorded 10 calls and 10 responses in the first receipt, with estimated spend of USD 0.00053603. That receipt covers `TR_01`.
-- I recorded 30 calls and 30 HTTP 200 responses in the second receipt, with estimated spend of USD 0.00119524. Its call ledger contains work on `TR_01` and `TR_02`; all four model slots were marked unavailable by the end, so I do not count it as a completed five-item pilot.
+- My first receipt records 10 calls, 10 responses, USD 0.00053603 estimated spend, and `TR_01`.
+- My second records 30 calls, 30 HTTP 200 responses, and USD 0.00119524 estimated spend. It contains calls for `TR_01` and `TR_02`; none of the four model slots completed the full five-item pipeline.
+- My third records 80 calls, 80 HTTP 200 responses, and USD 0.00494411 estimated spend. Gemma completed all 25 item-stage pairs across `TR_01`–`TR_05`; Llama completed 17 of 25 pairs, including all stages for `TR_01`–`TR_03`. Qwen completed 2 pairs and Mistral 7 pairs.
 
-Across these two Pilot B executions, I recorded 40 calls and USD 0.00173127 estimated spend. I recorded four separate v9 engineering connectivity probes, all HTTP 200. My earlier 27 September engineering records contain six probes: four HTTP 200, one HTTP 400, and one HTTP 404. I found three provider catalog metadata requests in those earlier records.
+Across these three Pilot B executions, I recorded 120 calls and USD 0.00667538 estimated spend. The third receipt archive supplied to me hashes to `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600`; the request stated a different digest ending in `680`. I preserved the supplied bytes and recorded the measured digest and discrepancy in the run 3 provenance record.
+
+I recorded four separate v9 engineering connectivity probes, all HTTP 200. My 27 September engineering records contain six probes: four HTTP 200, one HTTP 400, and one HTTP 404. I found three provider catalog metadata requests in those earlier records.
 
 | Activity I recorded | Count | What I can claim |
 | --- | ---: | --- |
 | Engineering connectivity probes | 10 | Non-study POST requests; 8 HTTP 200, 1 HTTP 400, 1 HTTP 404 |
 | Pilot A executions | 0 | I found no Pilot A receipt |
-| Prospective Pilot B executions | 2 | 40 calls total; USD 0.00173127 estimated spend |
+| Prospective Pilot B executions | 3 | 120 calls total; USD 0.00667538 estimated spend |
 | Confirmatory study executions | 0 | I have not collected confirmatory data |
 | Provider catalog metadata GETs | 3 | I count these separately from model-inference calls |
 
-I therefore have 50 documented model-inference POST requests in the Design Lab records, plus three catalog GET requests. I have not queried provider billing or activity logs, so I cannot rule out calls that were never recorded in the local evidence.
+I therefore have 130 documented Design Lab POST requests in these records: 10 engineering probes and 120 Pilot B calls, plus three catalog GET requests. I have not queried provider billing or activity logs, so I cannot rule out calls that were never recorded in the local evidence.
 
 I keep the detailed reconciliation in [`research/v9_0_prospective/provenance_2026_11_26/`](research/v9_0_prospective/provenance_2026_11_26/) and the original receipts in [`research/v9_0_prospective/pilot_receipts/`](research/v9_0_prospective/pilot_receipts/).
 

@@ -35,10 +35,14 @@ STYLE_WORD_MIN = 45
 STYLE_WORD_MAX = 55
 STYLE_WORD_TARGET_MIN = 48
 STYLE_WORD_TARGET_MAX = 52
+STYLE_SCRUB_INSTRUCTION = (
+    "Write 3 plain, neutral sentences totaling strictly 48 to 52 whitespace-separated words "
+    "(minimum 45, maximum 55)."
+)
 MAX_TOKENS = {
     "phase0_harvest": 256,
     "utility_perturb": 256,
-    "utility_style_scrub": 128,
+    "utility_style_scrub": 192,
     "phase1_digit_evaluation": 16,
     "domain2_digit_evaluation": 16,
 }
@@ -133,6 +137,7 @@ def load_rate_card(path: Path) -> tuple[dict[str, dict[str, Any]], str]:
     expected_policy = {
         "stage_max_tokens": MAX_TOKENS,
         "style_scrub": {
+            "instruction": STYLE_SCRUB_INSTRUCTION,
             "locked_word_window": [STYLE_WORD_MIN, STYLE_WORD_MAX],
             "target_word_window": [STYLE_WORD_TARGET_MIN, STYLE_WORD_TARGET_MAX],
             "maximum_repair_attempts": MAX_STYLE_REPAIRS,
@@ -341,8 +346,7 @@ def run_style_scrub_with_repairs(
     """Run style scrub and allow at most four targeted word-count repairs."""
     system = (
         "Neutralize stylistic framing while preserving the answer's utility and facts. "
-        "Write 48 to 52 whitespace-delimited words, which is inside the locked "
-        "45 to 55 word acceptance window. Return only the rewritten text."
+        f"{STYLE_SCRUB_INSTRUCTION} Return only the rewritten text."
     )
     row, current = run_stage(
         spec, api_key, item_id, "utility_style_scrub",
@@ -358,11 +362,10 @@ def run_style_scrub_with_repairs(
         current_count = len(current.split())
         repair_messages = _messages(
             "This is a length-adjustment repair. Preserve the existing rewrite's meaning, "
-            "task utility, and facts; do not add a new answer. The exact current rewrite "
-            f"contains {current_count} whitespace-delimited words. Adjust it to the "
-            f"{STYLE_WORD_TARGET_MIN}–{STYLE_WORD_TARGET_MAX} word target, preferably 50 words, "
-            f"and remain inside the locked {STYLE_WORD_MIN}–{STYLE_WORD_MAX} word window. "
-            "Return only the revised text.",
+            "task utility, and facts; do not add a new answer. "
+            f"{STYLE_SCRUB_INSTRUCTION} The exact current rewrite contains "
+            f"{current_count} whitespace-separated words. Adjust it toward 50 words "
+            "while meeting the stated sentence count and word window. Return only the revised text.",
             f"Current rewrite word count: {current_count}. Target: "
             f"{STYLE_WORD_TARGET_MIN}–{STYLE_WORD_TARGET_MAX} words.\n\n"
             "Research item:\n" + prompt + "\n\nCurrent rewrite:\n" + current,
@@ -497,6 +500,7 @@ def main(argv: list[str] | None = None) -> int:
         "maximum_http_calls_with_four_style_repairs": len(CANDIDATES) * len(items) * (len(MAX_TOKENS) + MAX_STYLE_REPAIRS),
         "style_scrub_repair_policy": {
             "locked_word_window": [STYLE_WORD_MIN, STYLE_WORD_MAX],
+            "instruction": STYLE_SCRUB_INSTRUCTION,
             "target_word_window": [STYLE_WORD_TARGET_MIN, STYLE_WORD_TARGET_MAX],
             "maximum_repair_attempts_per_item_and_model": MAX_STYLE_REPAIRS,
             "repairs_only_when_word_count_is_the_only_blocker": True,

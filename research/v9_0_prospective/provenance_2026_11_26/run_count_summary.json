@@ -1,5 +1,5 @@
 {
-  "schema": "designlab-live-run-accountability-v3",
+  "schema": "designlab-live-run-accountability-v4",
   "as_of_date": "2026-11-26",
   "source_basis": "local receipts, user-supplied run archives, and published PSI result files; not provider billing logs",
   "engineering_connectivity_post_requests": {
@@ -26,10 +26,10 @@
     }
   },
   "pilot_a_runs_evidenced": 0,
-  "pilot_b_runs_evidenced": 2,
-  "pilot_b_calls_started_total": 40,
-  "pilot_b_responses_total": 40,
-  "pilot_b_estimated_spend_usd_total": 0.00173127,
+  "pilot_b_runs_evidenced": 3,
+  "pilot_b_calls_started_total": 120,
+  "pilot_b_responses_total": 120,
+  "pilot_b_estimated_spend_usd_total": 0.00667538,
   "pilot_b_runs": [
     {
       "run_number": 1,
@@ -64,12 +64,69 @@
       "finish_reason_length_blocker_records": 1,
       "model_slots_available_at_end": 0,
       "classification": "prospective_pilot_b_not_confirmatory_study_partial"
+    },
+    {
+      "run_number": 3,
+      "timestamp_utc": "2026-11-26T08:40:05.873528+00:00",
+      "calls_started": 80,
+      "responses": 80,
+      "http_status_counts": {
+        "200": 80
+      },
+      "estimated_spend_usd": 0.00494411,
+      "budget_reserved_usd": 0.03063528,
+      "budget_cap_usd": 0.25,
+      "receipt_sha256": "c6c19b5db0def4f4f4e4a5134fb4cac5f622a3659856fe5294c4fc068e56b3c2",
+      "source_zip_sha256": "68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600",
+      "source_zip_sha256_expected_in_request": "68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430680",
+      "items_with_call_records": [
+        "TR_01",
+        "TR_02",
+        "TR_03",
+        "TR_04",
+        "TR_05"
+      ],
+      "calls_by_model_slot": {
+        "qwen_72b": 7,
+        "gemma_27b": 33,
+        "llama_70b": 31,
+        "mistral_24b": 9
+      },
+      "successful_item_stage_pairs_by_model_slot": {
+        "qwen_72b": 2,
+        "gemma_27b": 25,
+        "llama_70b": 17,
+        "mistral_24b": 7
+      },
+      "full_item_pipelines_by_model_slot": {
+        "gemma_27b": [
+          "TR_01",
+          "TR_02",
+          "TR_03",
+          "TR_04",
+          "TR_05"
+        ],
+        "llama_70b": [
+          "TR_01",
+          "TR_02",
+          "TR_03"
+        ]
+      },
+      "style_scrub_edge_cases": {
+        "mistral_24b_TR_02_repair_1_finish_reason": "length",
+        "mistral_24b_TR_02_repair_1_max_tokens": 128,
+        "mistral_24b_TR_02_repair_1_word_count": 99,
+        "qwen_72b_TR_01_final_word_count": 39,
+        "llama_70b_TR_04_final_word_count": 44
+      },
+      "model_slots_with_full_five_item_pipeline": 1,
+      "classification": "prospective_pilot_b_partial_model_coverage_not_confirmatory_study"
     }
   ],
   "confirmatory_study_runs_evidenced": 0,
-  "designlab_documented_model_inference_post_calls_total": 50,
+  "designlab_documented_model_inference_post_calls_total": 130,
   "designlab_provider_catalog_metadata_get_requests": 3,
-  "designlab_provider_http_requests_total_including_metadata": 53,
+  "designlab_provider_http_requests_total_including_metadata": 133,
   "psi_live_colab_runs_evidenced": 1,
   "psi_live_result_rows": 5,
   "psi_documented_local_t4_rows": 4,
@@ -81,10 +138,12 @@
   "api_keys_read_or_logged": false,
   "new_provider_requests_sent_by_assistant_during_audit": 0,
   "frozen_v8_6_3_files_modified": false,
-  "colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
-  "colab_bundle_bytes": 65722,
-  "colab_bundle_members": 24,
-  "previous_colab_bundle_sha256": "0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035",
-  "colab_bundle_credential_shaped_matches": 0,
-  "documented_live_experimental_executions_across_designlab_and_psi": 3
+  "documented_live_experimental_executions_across_designlab_and_psi": 4,
+  "pre_run_3_colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
+  "pre_run_3_colab_bundle_bytes": 65722,
+  "pre_run_3_colab_bundle_members": 24,
+  "pre_run_3_colab_bundle_credential_shaped_matches": 0,
+  "earlier_colab_bundle_sha256": "0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035",
+  "colab_bundle_sha256": null,
+  "colab_bundle_sha256_note": "I record the rebuilt bundle hash outside this archive because this run ledger is itself included in the bundle."
 }

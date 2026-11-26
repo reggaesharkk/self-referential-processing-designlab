@@ -6,7 +6,7 @@
     "Four named candidate slots map one-to-one to model IDs and rates below.",
     "Rates are a versioned estimate snapshot and must be refreshed before a future live run.",
     "The runner reserves estimated maximum input/output cost before each request and stops before the next request if the cumulative reservation would exceed its USD 0.25 cap.",
-    "The output reservation uses twice each stage max_tokens limit; phase 0 and utility perturb allow 256 tokens, style scrub 128, and both digit evaluations remain locked at 16.",
+    "The output reservation uses twice each stage max_tokens limit; phase 0 and utility perturb allow 256 tokens, style scrub 192, and both digit evaluations remain locked at 16.",
     "The five-item, four-slot run has 100 baseline calls and at most 180 calls with four word-count repairs per item/model; every retry is separately reserved under the same USD 0.25 cap.",
     "The USD 0.25 cap is enforced by this runner using the listed estimates; it is not an upstream provider billing limit."
   ],
@@ -44,7 +44,7 @@
     "stage_max_tokens": {
       "phase0_harvest": 256,
       "utility_perturb": 256,
-      "utility_style_scrub": 128,
+      "utility_style_scrub": 192,
       "phase1_digit_evaluation": 16,
       "domain2_digit_evaluation": 16
     },
@@ -58,7 +58,8 @@
         52
       ],
       "maximum_repair_attempts": 4,
-      "repairs_only_when_word_count_is_only_blocker": true
+      "repairs_only_when_word_count_is_only_blocker": true,
+      "instruction": "Write 3 plain, neutral sentences totaling strictly 48 to 52 whitespace-separated words (minimum 45, maximum 55)."
     },
     "pilot_items_per_run": 5,
     "model_slots_per_run": 4,

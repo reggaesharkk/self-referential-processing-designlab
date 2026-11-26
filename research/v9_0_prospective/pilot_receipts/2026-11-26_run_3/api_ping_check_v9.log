@@ -1,0 +1,7 @@
+exit_code=0
+qwen_72b qwen/qwen-2.5-72b-instruct: HTTP 200 available=True
+gemma_27b google/gemma-2-27b-it: HTTP 200 available=True
+llama_70b meta-llama/llama-3.3-70b-instruct: HTTP 200 available=True
+mistral_24b mistralai/mistral-small-24b-instruct-2501: HTTP 200 available=True
+Wrote redacted result metadata to /content/v9_0_colab_pilot_runs/20261126T084003.553510Z/api_ping_check_v9.json
+Connectivity gate: PASS

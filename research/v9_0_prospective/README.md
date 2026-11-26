@@ -37,11 +37,11 @@ I run the first five verified pool rows through these stages for each model slot
 
 1. Phase 0 harvest, capped at 256 output tokens.
 2. Utility-preserving perturbation, capped at 256 output tokens.
-3. Utility style scrub, capped at 128 output tokens and locked to a 45–55 whitespace-delimited word window.
+3. Utility style scrub, capped at 192 output tokens. I instruct it to write 3 plain, neutral sentences totaling strictly 48 to 52 whitespace-separated words, with a locked minimum of 45 and maximum of 55.
 4. Phase 1 utility digit evaluation, strictly capped at 16 output tokens.
 5. Domain 2 style-and-utility digit evaluation, strictly capped at 16 output tokens.
 
-I allow at most four targeted style-scrub repairs when word count is the only blocker. Each repair states the exact current count and targets 48–52 words. If the rewrite still falls outside the locked window, or another blocker remains, I fail that model/item path closed. My baseline is 100 calls across four models and five items; my maximum is 45 calls per model and 180 overall, including all four retries per item/model. I reserve each request before sending it, using the stage token cap with twice that output allowance for reservation, under the same USD 0.25 estimated-spend cap. I record token counts, latency, and estimated cost per model. The cap is an estimate guard, not a provider invoice guarantee.
+I allow at most four targeted style-scrub repairs when word count is the only blocker. The base prompt and each repair use the same instruction: “Write 3 plain, neutral sentences totaling strictly 48 to 52 whitespace-separated words (minimum 45, maximum 55).” Each repair states the exact current count, targets 48–52 words, and remains inside the 45–55 acceptance window. If the rewrite still falls outside the locked window, or another blocker remains, I fail that model/item path closed. My baseline is 100 calls across four models and five items; my maximum is 45 calls per model and 180 overall, including all four retries per item/model. I reserve each request before sending it, using the stage token cap with twice that output allowance for reservation, under the same USD 0.25 estimated-spend cap. I record token counts, latency, and estimated cost per model. The cap is an estimate guard, not a provider invoice guarantee.
 
 I validate the pool offline with:
 
@@ -53,6 +53,8 @@ I add `--execute` only for a live Pilot B run. My reports retain item IDs and ha
 
 ## Live records I have
 
-I have two prospective Pilot B receipts. My first receipt records 10 calls, 10 responses, and USD 0.00053603 estimated spend for `TR_01`. My second receipt records 30 calls, all HTTP 200, and USD 0.00119524 estimated spend. The second ledger contains calls for `TR_01` and `TR_02`; all four slots are marked unavailable by its final summary, so I do not describe it as a completed five-item pilot. The receipt records style-scrub word-window blockers and one `finish_reason == "length"` blocker.
+I have three prospective Pilot B receipts. My first records 10 calls, 10 responses, and USD 0.00053603 estimated spend for `TR_01`. My second records 30 calls, 30 HTTP 200 responses, and USD 0.00119524 estimated spend; its four model slots were unavailable at the end. My third records 80 calls, 80 HTTP 200 responses, and USD 0.00494411 estimated spend. In that run, Gemma completed all 25 item-stage pairs across `TR_01`–`TR_05`. Llama completed 17 of 25 pairs, with all five stages complete for `TR_01`–`TR_03`; Qwen completed 2 pairs and Mistral 7 pairs. I archive the third receipt under [`pilot_receipts/2026-11-26_run_3/`](pilot_receipts/2026-11-26_run_3/).
 
-I recorded four separate v9 engineering probes, all HTTP 200. I have no Pilot A run and no confirmatory study run in these records. My cumulative request counts and limitations are in [`provenance_2026_11_26/`](provenance_2026_11_26/); I preserve each receipt under [`pilot_receipts/`](pilot_receipts/).
+The request accompanying my third source ZIP stated SHA-256 `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430680`, while the supplied archive bytes hash to `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600`. I preserved the supplied ZIP and recorded the discrepancy in the run 3 reconciliation note and manifest.
+
+Across my three Pilot B runs, I recorded 120 calls and USD 0.00667538 estimated spend. I also recorded four v9 engineering connectivity probes, all HTTP 200, and six 27 September engineering probes: four HTTP 200, one HTTP 400, and one HTTP 404. I found three provider catalog metadata GET requests. I found no Pilot A run and no confirmatory study run; `confirmatory_data_collected` is false in all three Pilot B receipts. My cumulative counts and limitations are in [`provenance_2026_11_26/`](provenance_2026_11_26/).

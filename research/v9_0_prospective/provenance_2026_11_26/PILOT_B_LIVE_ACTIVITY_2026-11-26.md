@@ -1,47 +1,50 @@
-# My live-run accountability addendum — 26 November 2026
+# My live-run accountability addendum — 26 November 2026, run 3
 
-I prepared this addendum after receiving the second `v9_0_pilot_b_results.zip`. The earlier audit counted the first 10-call receipt because this newer results archive was not then available. I have now reconciled both receipts, the new four-call connectivity result, and the published PSI live-result files.
+I prepared this addendum after receiving my third Pilot B archive. I reconciled all three local receipts, the September and November engineering probes, and the published PSI live-result files. These are counts I can substantiate from saved records, not provider billing data.
 
 ## Counts I can substantiate
 
 | Category | My evidence-backed count | Record |
 | --- | ---: | --- |
-| 27 September engineering connectivity POST probes | 6: 4 HTTP 200, 1 HTTP 400, 1 HTTP 404 | Earlier provider diagnostics; non-study prompts |
-| 26 November v9 connectivity probes | 4: all HTTP 200 | `api_ping_check_v9.json`; engineering checks only |
+| 27 September engineering connectivity POST probes | 6: 4 HTTP 200, 1 HTTP 400, 1 HTTP 404 | Non-study provider diagnostics |
+| 26 November v9 connectivity probes | 4: all HTTP 200 | Engineering checks only |
 | Engineering connectivity probes total | 10: 8 HTTP 200, 1 HTTP 400, 1 HTTP 404 | I count these separately from pilots |
 | Pilot A executions | 0 | I found no Pilot A receipt |
-| Prospective Pilot B executions | 2 | One 10-call receipt and one 30-call receipt |
-| Pilot B calls / responses | 40 / 40 | 10 + 30 |
-| Pilot B estimated spend | USD 0.00173127 | USD 0.00053603 + USD 0.00119524 |
-| Confirmatory study executions | 0 | Neither Pilot B receipt records confirmatory data |
-| Provider catalog metadata GETs | 3 | I count these as metadata requests, not inference calls |
+| Prospective Pilot B executions | 3 | One 10-call, one 30-call, and one 80-call receipt |
+| Pilot B calls / responses | 120 / 120 | 10 + 30 + 80 |
+| Pilot B estimated spend | USD 0.00667538 | USD 0.00053603 + USD 0.00119524 + USD 0.00494411 |
+| Confirmatory study executions | 0 | No receipt records confirmatory data |
+| Provider catalog metadata GETs | 3 | I count these separately from POST calls |
 | PSI live Colab benchmark executions | 1 | Five model rows; four local T4 rows and one Groq API row |
 
-I count 50 documented DesignLab model-inference POST calls: 10 connectivity probes plus 40 Pilot B calls. I count 53 documented DesignLab provider requests when I add the three catalog GETs. The PSI release confirms one live benchmark execution, but its published files do not include a request ledger, so I cannot state an exact external API-call count for PSI.
+I count 130 documented Design Lab POST requests: 10 engineering connectivity probes plus 120 Pilot B calls. I count 133 provider HTTP requests when I add the three catalog GETs. The PSI release confirms one live benchmark execution, but its published files do not include a request ledger, so I cannot state an exact external API-call count for PSI.
 
-## What happened in my second Pilot B execution
+## What happened in my third Pilot B execution
 
-I received 30 HTTP responses, all with status 200, and the receipt estimates USD 0.00119524 in spend against the USD 0.25 cap. The ledger contains calls for `TR_01` and `TR_02`; it contains no call records for `TR_03` through `TR_05`. The final summary marks all four model slots unavailable. Fourteen of the 30 call records are marked unavailable: 13 carry the style-scrub word-window blocker and one carries `finish_reason_length`. I therefore record this as a live but incomplete Pilot B execution, not a completed five-item pilot.
+I received 80 HTTP responses, all status 200, and the receipt estimates USD 0.00494411 in spend against the USD 0.25 cap; the pre-request reservation total was USD 0.03063528. Gemma completed all 25 item-stage pairs across `TR_01`–`TR_05` in 33 calls. Llama completed 17 of 25 pairs in 31 calls, with `TR_01`–`TR_03` fully complete. Qwen completed two pairs in seven calls; Mistral completed seven pairs in nine calls. I classify the run as partial model coverage with one complete five-item pipeline, not a confirmatory study.
 
-The four separate v9 connectivity checks returned HTTP 200 and recorded `finish_reason: stop`, with no reported reasoning tokens. I classify them as engineering probes, not study runs.
+The receipt shows why I changed the style-scrub prompt and cap. Mistral's `TR_02` repair 1 stopped at `finish_reason: length` with 128 output tokens and a 99-word rewrite. Qwen's `TR_01` repairs plateaued at 39 words, and Llama reached 44 words on `TR_04`. The runner now allows 192 style-scrub output tokens and instructs both the initial rewrite and repairs to produce three plain, neutral sentences totaling strictly 48–52 whitespace-separated words, within a 45–55 acceptance window. The evaluation stages remain locked at 16 tokens.
 
-## PSI run record
+The request accompanying `v9_0_pilot_b_results (1).zip` stated SHA-256 `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430680`. The supplied file I received hashes to `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600`. I preserved the supplied bytes and recorded the measured digest; I do not report the requested digest as the file's checksum. The ZIP passed its integrity check, and all six entries in its internal `SHA256SUMS.txt` matched. Its `pilot_b_v9_result.json` SHA-256 is `c6c19b5db0def4f4f4e4a5134fb4cac5f622a3659856fe5294c4fc068e56b3c2`.
 
-I found one published PSI v5.0 live Colab execution dated `2026-11-25T21:08:18.171266+00:00`. The release contains five model result rows: four local T4 GPU results and one Groq API result. It does not contain a request ledger that supports an exact Groq HTTP-call total. I preserve this run in PSI and do not include unknown PSI API requests in my DesignLab totals.
+## Earlier DesignLab and PSI records
 
-## Colab bundle I rebuilt
+My first Pilot B receipt records 10 calls, 10 responses, and USD 0.00053603 estimated spend for `TR_01`. My second records 30 calls, 30 HTTP 200 responses, and USD 0.00119524 estimated spend; its two-item ledger ended with all four model slots unavailable. I keep both earlier records unchanged.
 
-I preserved my earlier Colab bundle in the D: audit folder at SHA-256 `0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035`. I rebuilt `D:\v9_0_colab_pilot_bundle.zip` from my current v9 runner, both Pilot B receipt folders, the verified item pool, and the one-code-cell notebook. The new bundle contains 24 files, retains the pool at its verified SHA-256, and has SHA-256 `b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b`. I found zero provider-key-shaped values in the bundle or its nested source archive.
+The four separate v9 connectivity checks returned HTTP 200 and recorded `finish_reason: stop`, with no reported reasoning tokens. I classify them as engineering probes, not study runs. I found no Pilot A receipt and no confirmatory study execution.
 
-## Source records and hashes
+I found one published PSI v5.0 live Colab execution dated `2026-11-25T21:08:18.171266+00:00`. The release contains five model result rows: four local T4 GPU results and one Groq API result. It does not contain a request ledger supporting an exact Groq HTTP-call total. I preserve this run in PSI and do not include unknown PSI API requests in my DesignLab totals.
+
+## Bundle and source records
+
+Before run 3, I rebuilt `D:\v9_0_colab_pilot_bundle.zip` at SHA-256 `a723d402114dd5114836618d13f6f81ebd9843471cd8061c5f5bce5d34938772`. I preserve that version in the D: audit folder before replacing it. I do not put the next bundle's digest in this ledger because the ledger itself is packaged in that bundle; I record the new digest outside the archive after building it.
 
 - First Pilot B source archive: `v9_0_pilot_b_results (17).zip`; SHA-256 `7d0d9103e112288137bd52cc315f0560b0f20df45c23e70cb2140e888902b4a7`.
 - First Pilot B receipt: SHA-256 `db82e60bf1aaffa3ecd76909c34aa1a90160224d5e2b5f8f6b3afb346fcdcfc3`.
 - Second Pilot B source archive: `v9_0_pilot_b_results.zip`; SHA-256 `1a1cd21d6abbda29426a60e4e65135ab0311ac3e10139d207e917b85ed0c7188`.
 - Second Pilot B receipt: SHA-256 `127a8dc8e1125ec43a41cb60255b3e6baddfa0ad612721228a98970b7b786443`.
-- Second connectivity result: SHA-256 `1476ac940e27fe77dd2d391b5e94e1cfe79383ab6a07418dcb2087b6b3a75d59`.
+- Third Pilot B source archive: `v9_0_pilot_b_results (1).zip`; measured SHA-256 `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600`; digest stated in the request `68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430680`.
+- Third Pilot B receipt: SHA-256 `c6c19b5db0def4f4f4e4a5134fb4cac5f622a3659856fe5294c4fc068e56b3c2`.
 - Item pool: 75,875 bytes; SHA-256 `128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3`; I left it outside Git and did not modify it.
 
-I verified the second source ZIP's internal `SHA256SUMS.txt` against its six result files. I scanned the source ZIP and receipt outputs for provider-key-shaped values and found none. I did not read or log an API key. I did not send any provider requests while preparing this addendum. I did not modify frozen v8.6.3 files.
-
-These are counts from records I found, not provider billing data. I did not query provider-side activity logs, so I cannot exclude calls that were not saved in the local evidence.
+I scanned the new source archive's receipt artifacts for credential-shaped values and found none. I did not read or log an API key and sent no provider requests while preparing this addendum. I did not modify frozen v8.6.3 files. I did not query provider-side activity logs, so unrecorded calls cannot be excluded.
