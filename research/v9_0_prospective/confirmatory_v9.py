@@ -15,7 +15,7 @@ LOCAL_SLOTS = ("qwen_7b", "gemma_9b", "llama_8b", "mistral_7b")
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--backend", choices=("openrouter", "local-hf"), default="openrouter",
-                        help="OpenRouter API or local Hugging Face 4-bit GPU inference")
+                        help="OpenRouter API or local Hugging Face 4-bit CUDA inference (minimum 14 GiB VRAM)")
     parser.add_argument("--slot", choices=LOCAL_SLOTS, default=None,
                         help="local-hf model family to run; one slot per durable checkpoint")
     parser.add_argument("--items", type=Path, default=None,

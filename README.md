@@ -41,7 +41,7 @@ The budget screenshot shows a USD 50 weekly API-key limit, USD 0.20 used, and US
 
 I keep the partial confirmatory receipt in [`research/v9_0_prospective/confirmatory_receipts/`](research/v9_0_prospective/confirmatory_receipts/) and current totals in [`research/v9_0_prospective/provenance_2026_11_26/run_count_summary.json`](research/v9_0_prospective/provenance_2026_11_26/run_count_summary.json). I sent no provider requests and read or logged no API key while making this update. My frozen v8.6.3 files and `items_pool_v1.json` remain unchanged.
 
-I have also prepared a separate local-HF v9 confirmatory variant for four open-weight model families on a Colab T4. It uses sequential NF4 model loading, no inference API keys, USD 0.00 inference API spend, and per-item Drive checkpoints with same-slot resume. I have not run it on a GPU, so it adds no live execution or collected item count. It is a distinct v9 model and backend variant, not a run of my frozen v8.6.3 protocol; I will preserve that boundary in any report.
+I have also prepared a separate local-HF v9 confirmatory variant for four open-weight model families. It has a single-cell Colab T4 notebook and setup scripts for my existing Debian GCE VM; the GCE setup stops unless it detects a CUDA GPU with at least 14 GiB VRAM. Both paths use no inference API keys, report USD 0.00 inference API spend, and save per-item checkpoints. I have not run it on a GPU, so it adds no live execution or collected item count. It is a distinct v9 model and backend variant, not a run of my frozen v8.6.3 protocol; I will preserve that boundary in any report.
 
 ## How I use this repository
 

@@ -19,6 +19,7 @@ import pilot_b_v9 as pilot
 
 EXPECTED_ITEMS_POOL_SHA256 = pilot.EXPECTED_ITEMS_POOL_SHA256
 EXPECTED_ITEMS = 260
+MIN_GPU_MEMORY_BYTES = 14 * 1024**3
 STAGE_ORDER = (
     "phase0_harvest",
     "utility_perturb",
@@ -78,6 +79,7 @@ POLICY = {
     "schema": "designlab-local-hf-confirmatory-policy-v1",
     "item_pool_sha256": EXPECTED_ITEMS_POOL_SHA256,
     "num_items": EXPECTED_ITEMS,
+    "minimum_cuda_gpu_memory_bytes": MIN_GPU_MEMORY_BYTES,
     "models": LOCAL_MODELS,
     "utility_scrubber_by_tested_slot": UTILITY_SCRUBBER_BY_SLOT,
     "stages": list(STAGE_ORDER),
@@ -96,6 +98,18 @@ POLICY = {
 POLICY_SHA256 = hashlib.sha256(
     json.dumps(POLICY, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 ).hexdigest()
+
+
+def validate_gpu_device_summary(device: dict[str, Any]) -> dict[str, Any]:
+    gpu_name = str(device.get("gpu_name") or "").strip()
+    memory_bytes = int(device.get("gpu_total_memory_bytes") or 0)
+    if not gpu_name or memory_bytes < MIN_GPU_MEMORY_BYTES:
+        memory_gib = memory_bytes / (1024**3)
+        raise RuntimeError(
+            "local-hf requires a CUDA GPU with at least 14 GiB of VRAM; "
+            f"detected {gpu_name or 'no GPU'} with {memory_gib:.1f} GiB"
+        )
+    return {**device, "gpu_name": gpu_name, "gpu_total_memory_bytes": memory_bytes}
 
 
 def utc_now() -> str:
@@ -783,10 +797,7 @@ def run_local_confirmatory(
 
         for selected_slot in selected_slots:
             device = runtime.device_summary()
-            gpu_name = str(device.get("gpu_name", ""))
-            if "T4" not in gpu_name.upper():
-                raise RuntimeError(f"local-hf confirmatory execution is locked to a T4 GPU; detected {gpu_name or 'unknown GPU'}")
-            report["device"] = device
+            report["device"] = validate_gpu_device_summary(device)
             scrubber_slot = UTILITY_SCRUBBER_BY_SLOT[selected_slot]
             required_model_slots = list(dict.fromkeys([selected_slot, scrubber_slot]))
             revisions = runtime.revisions(required_model_slots)

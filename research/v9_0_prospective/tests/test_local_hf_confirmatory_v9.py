@@ -136,6 +136,15 @@ class LocalHFPolicyTests(unittest.TestCase):
         self.assertIn("--resume-from", seen)
         self.assertIn("--execute", seen)
 
+    def test_gpu_preflight_requires_at_least_14_gib_cuda_memory(self) -> None:
+        t4 = {"gpu_name": "Tesla T4", "gpu_total_memory_bytes": 16_000_000_000}
+        self.assertEqual(local.validate_gpu_device_summary(t4)["gpu_name"], "Tesla T4")
+        small = {"gpu_name": "small CUDA device", "gpu_total_memory_bytes": 8 * 1024**3}
+        with self.assertRaisesRegex(RuntimeError, "at least 14 GiB"):
+            local.validate_gpu_device_summary(small)
+        with self.assertRaisesRegex(RuntimeError, "no GPU"):
+            local.validate_gpu_device_summary({"gpu_name": "", "gpu_total_memory_bytes": 0})
+
     def test_model_pool_releases_prior_family_and_uses_embedded_gemma_nf4(self) -> None:
         calls = []
 
