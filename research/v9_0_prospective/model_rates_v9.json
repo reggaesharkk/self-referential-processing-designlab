@@ -5,10 +5,10 @@
   "notes": [
     "I map four tested model slots one-to-one to the model IDs and dated rates below.",
     "I route style scrubbing through an independent utility model: Gemma for Qwen, Llama, and Mistral; Mistral for Gemma. Mistral is fallback only for Qwen and Llama, so no model scrubs its own output.",
-    "I reserve each request and transient retry before sending at the actual billed-model rate. Pilot B is capped at USD 0.25 and the 50-item Pilot A entrypoint at USD 0.50.",
+    "I reserve each request and transient retry before sending it at the actual billed-model rate. Pilot B is capped at USD 0.25, my 50-item Pilot A entrypoint at USD 0.50, and my locked 260-item confirmatory entrypoint at USD 1.25.",
     "I reserve twice each stage max_tokens limit; phase 0 and utility perturb allow 256 tokens, style scrub 192, and both digit evaluations remain locked at 16.",
-    "The five-item run has 100 baseline logical calls and at most 230 logical calls with route-specific fallback and repairs; three transient retries permit at most 920 HTTP attempts.",
-    "I accept 5, 50, or 260 leading items. My Pilot A entrypoint locks 50 items and a USD 0.50 cap; the 260-item size remains a separately classified confirmatory run. Rates are estimates and must be refreshed before a future live run."
+    "My five-item run has 100 baseline logical calls and at most 230 logical calls with route-specific fallback and repairs; three transient retries permit at most 920 HTTP attempts.",
+    "I accept 5, 50, or 260 leading items. My Pilot A entrypoint locks 50 items and USD 0.50; my Confirmatory entrypoint locks all 260 items and USD 1.25. Rates are estimates and must be refreshed before a future live run."
   ],
   "models": {
     "qwen_72b": {
@@ -112,11 +112,11 @@
     "maximum_logical_calls_with_fallback_for_default_items": 230,
     "maximum_http_attempts_with_retries_for_default_items": 920,
     "output_token_reservation_multiplier": 2,
-    "maximum_budget_usd": 0.5,
+    "maximum_budget_usd": 1.25,
     "budget_cap_usd_by_num_items": {
       "5": 0.25,
       "50": 0.5,
-      "260": 0.25
+      "260": 1.25
     }
   }
 }

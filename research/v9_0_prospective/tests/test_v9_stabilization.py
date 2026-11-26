@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import io
 import contextlib
+import os
+import tempfile
 import json
 import sys
 import unittest
@@ -15,6 +17,7 @@ sys.path.insert(0, str(V9_DIR))
 import api_ping_check_v9 as api
 import pilot_b_v9 as pilot
 import pilot_a_v9 as pilot_a
+import confirmatory_v9 as confirmatory
 
 
 class FakeClock:
@@ -257,7 +260,7 @@ class RunnerPolicyTests(unittest.TestCase):
         self.assertEqual(forwarded[forwarded.index("--num-items") + 1], "50")
         self.assertEqual(forwarded[forwarded.index("--budget-usd") + 1], "0.5")
         self.assertIn("--execute", forwarded)
-        self.assertEqual(pilot.BUDGET_CAP_USD_BY_NUM_ITEMS, {5: 0.25, 50: 0.50, 260: 0.25})
+        self.assertEqual(pilot.BUDGET_CAP_USD_BY_NUM_ITEMS, {5: 0.25, 50: 0.50, 260: 1.25})
         self.assertEqual(pilot.run_classification_for_num_items(50),
                          ("prospective_pilot_a_not_confirmatory_study", False))
 
@@ -265,6 +268,96 @@ class RunnerPolicyTests(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()):
             with self.assertRaises(SystemExit):
                 pilot_a.main(["--budget-usd", "0.51"])
+
+    def test_style_scrub_range_exhaustion_skips_only_that_item(self) -> None:
+        items = [
+            {"item_id": f"TR_{index:02d}", "category": "test", "prompt_text": f"prompt {index}"}
+            for index in (1, 2, 3)
+        ]
+        rates = {
+            spec["slot"]: {"input_usd_per_1m_tokens": 0.1, "output_usd_per_1m_tokens": 0.1}
+            for spec in api.CANDIDATES
+        }
+        attempted: list[tuple[str, str, str]] = []
+
+        def fake_stage(spec, api_key, item_id, stage, messages, timeout, rate,
+                       guard, report, checkpoint):
+            attempted.append((spec["slot"], item_id, stage))
+            row = {
+                "slot": spec["slot"], "tested_slot": spec["slot"],
+                "billing_slot": spec["slot"], "call_role": "tested_model",
+                "provider": spec["provider"], "model_id": spec["model_id"],
+                "item_id": item_id, "stage": stage, "available": True,
+                "availability_blockers": [], "http_status": 200,
+                "http_attempts_started": 1, "http_attempts": [{"http_status": 200}],
+                "retry_count": 0, "input_tokens": 1, "output_tokens": 1,
+                "estimated_usd": 0.000001, "budget_reservation_usd": 0.000001,
+                "latency_ms": 1,
+            }
+            report["calls"].append(row)
+            checkpoint()
+            return row, f"{stage} answer"
+
+        def fake_style(tested_spec, keys, item_id, prompt, perturbed, timeout,
+                       all_rates, guard, report, checkpoint):
+            attempted.append((tested_spec["slot"], item_id, "utility_style_scrub"))
+            billing_slot, _ = pilot.style_scrubber_route(tested_spec["slot"])
+            available = item_id != "TR_02"
+            row = {
+                "slot": tested_spec["slot"], "tested_slot": tested_spec["slot"],
+                "billing_slot": billing_slot, "call_role": "shared_utility_scrubber",
+                "provider": tested_spec["provider"], "model_id": tested_spec["model_id"],
+                "item_id": item_id, "stage": "utility_style_scrub",
+                "available": available,
+                "availability_blockers": [] if available else ["style_scrub_word_count_out_of_range"],
+                "http_status": 200, "http_attempts_started": 1,
+                "http_attempts": [{"http_status": 200}], "retry_count": 0,
+                "input_tokens": 1, "output_tokens": 1,
+                "estimated_usd": 0.000001, "budget_reservation_usd": 0.000001,
+                "latency_ms": 1, "style_scrub_word_count": 48 if available else 44,
+            }
+            report["calls"].append(row)
+            checkpoint()
+            return row, "neutral scrubbed answer" if available else "short rewrite"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "isolated-run.json"
+            with patch.dict(os.environ, {"OPENROUTER_API_KEY": "unit-test-placeholder"}):
+                with patch.object(pilot, "load_items", return_value=(pilot.EXPECTED_ITEMS_POOL_SHA256, items)):
+                    with patch.object(pilot, "load_rate_card", return_value=(rates, "2026-11-26")):
+                        with patch.object(pilot, "run_stage", side_effect=fake_stage):
+                            with patch.object(pilot, "run_style_scrub_with_repairs", side_effect=fake_style):
+                                self.assertEqual(pilot.main(["--execute", "--output", str(output)]), 0)
+            report = json.loads(output.read_text(encoding="utf-8"))
+
+        self.assertEqual(len(report["item_level_summary"]), 12)
+        for slot in (spec["slot"] for spec in api.CANDIDATES):
+            rows = [x for x in report["item_level_summary"] if x["slot"] == slot]
+            self.assertEqual([x["item_id"] for x in rows], ["TR_01", "TR_02", "TR_03"])
+            self.assertEqual([x["status"] for x in rows], ["complete", "skipped_due_to_style_scrub_range", "complete"])
+            self.assertFalse(rows[1]["available"])
+            self.assertEqual(rows[1]["skip_reason"], "skipped_due_to_style_scrub_range")
+            self.assertEqual(rows[1]["final_style_word_count"], 44)
+            self.assertEqual(rows[1]["completed_stages"], ["phase0_harvest", "utility_perturb"])
+            self.assertIn((slot, "TR_03", "phase0_harvest"), attempted)
+            self.assertNotIn((slot, "TR_02", "phase1_digit_evaluation"), attempted)
+        self.assertFalse(report["stopped_early"])
+
+    def test_confirmatory_entrypoint_locks_260_and_one_dollar_twenty_five_cap(self) -> None:
+        forwarded: list[str] = []
+        with patch.object(confirmatory.pilot_b_v9, "main", side_effect=lambda argv: forwarded.extend(argv) or 0):
+            self.assertEqual(confirmatory.main(["--execute"]), 0)
+        self.assertEqual(forwarded[forwarded.index("--num-items") + 1], "260")
+        self.assertEqual(forwarded[forwarded.index("--budget-usd") + 1], "1.25")
+        self.assertIn("--execute", forwarded)
+        self.assertEqual(pilot.BUDGET_CAP_USD_BY_NUM_ITEMS[260], 1.25)
+        self.assertEqual(pilot.run_classification_for_num_items(260),
+                         ("prospective_confirmatory_study", True))
+
+    def test_confirmatory_entrypoint_rejects_budget_above_cap(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                confirmatory.main(["--budget-usd", "1.26"])
 
     def test_rate_card_matches_runner_policy(self) -> None:
         rates, snapshot = pilot.load_rate_card(V9_DIR / "model_rates_v9.json")

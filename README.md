@@ -41,21 +41,21 @@ I have five documented prospective Pilot B executions:
 
 Across the five Pilot B executions, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. The run 3 source ZIP has measured SHA-256 68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600, differing from the digest stated in that request. Run 4's source ZIP matches its stated SHA-256 50618f7279799d08f562490455f261bd024094617b72f95ca9d37f799f116f1b. I preserved both archives and their reconciliations.
 
-I count six documented live experimental executions across DesignLab and PSI: five prospective Pilot B runs and one PSI benchmark run. I prepared a 50-item Pilot A runner with a USD 0.50 cap, but Pilot A remains unrun. The 22 engineering connectivity probes are separate; I found no Pilot A or confirmatory study execution.
+I count seven documented live experimental executions across DesignLab and PSI: five Pilot B runs, one Pilot A run, and one PSI benchmark run. My Pilot A run covered 50 items, recorded 540 HTTP 200 calls, zero retries, USD 0.04127526 estimated spend, and 405 successful item-stage pairs (80 full five-stage item pipelines plus five partial stage pairs). Its full-pipeline counts are Qwen 39, Llama 30, Gemma 9, and Mistral 2. I prepared a 260-item confirmatory entrypoint but have not run it.
 
-I recorded 16 November v9 engineering connectivity probes across four archived run outputs, all HTTP 200. My 27 September engineering records contain six probes: four HTTP 200, one HTTP 400, and one HTTP 404. I count 22 engineering probes in total (20 HTTP 200, one HTTP 400, one HTTP 404). I found three provider catalog metadata requests in those earlier records.
+I recorded 20 November v9 engineering connectivity probes across five archived run outputs, all HTTP 200. My 27 September engineering records contain six probes: four HTTP 200, one HTTP 400, and one HTTP 404. I count 26 engineering probes in total (24 HTTP 200, one HTTP 400, one HTTP 404). I also found three provider catalog metadata requests and count them separately.
 
 | Activity I recorded | Count | What I can claim |
 | --- | ---: | --- |
-| Engineering connectivity probes | 22 | Non-study POST requests; 20 HTTP 200, 1 HTTP 400, 1 HTTP 404 |
-| Pilot A executions | 0 | I prepared a locked 50-item runner; I found no Pilot A receipt |
+| Engineering connectivity probes | 26 | Non-study POST requests; 24 HTTP 200, 1 HTTP 400, 1 HTTP 404 |
+| Pilot A executions | 1 | 540 HTTP 200 calls, zero retries, USD 0.04127526 estimated spend; 405 successful item-stage pairs, with partial model coverage |
 | Prospective Pilot B executions | 5 | 317 calls total; USD 0.01926445 estimated spend; run 5 passed 4/4 slots |
 | Confirmatory study executions | 0 | I have not collected confirmatory data |
 | Provider catalog metadata GETs | 3 | I count these separately from model-inference calls |
 
-I therefore have 339 documented Design Lab model-inference POST requests in these records: 22 engineering probes and 317 Pilot B calls, plus three catalog metadata GET requests (342 provider HTTP requests total).
+I therefore have 883 documented DesignLab POST requests in these records: 26 engineering probes, 317 Pilot B calls, and 540 Pilot A calls. Three provider catalog metadata GET requests bring the saved DesignLab HTTP request count to 886. I have not run the 260-item confirmatory entrypoint; confirmatory study runs remain at 0.
 
-I keep the detailed reconciliation in [research/v9_0_prospective/provenance_2026_11_26/](research/v9_0_prospective/provenance_2026_11_26/) and all five original receipts in [research/v9_0_prospective/pilot_receipts/](research/v9_0_prospective/pilot_receipts/).
+I keep the current reconciliation in [research/v9_0_prospective/provenance_2026_11_26/](research/v9_0_prospective/provenance_2026_11_26/) and all Pilot B and Pilot A receipts in [research/v9_0_prospective/pilot_receipts/](research/v9_0_prospective/pilot_receipts/).
 
 ## How I use this repository
 
@@ -64,4 +64,4 @@ I use OSF for the archival source record and this repository as my readable, ver
 **Rights boundary — effective 1 October 2026:** I reserve new author-owned original material first published here from this date. Earlier express licenses remain in force for the material they cover. I follow [my rights policy](RIGHTS_POLICY_2026_10_01.md) and [my portfolio evidence standard](https://github.com/reggaesharkk/Reggae-shark-universe-/blob/main/PORTFOLIO_EVIDENCE_AND_RIGHTS_STANDARD_2026_10_01.md).
 
 
-I prepared a dedicated 50-item Pilot A runner and Colab bundle with `prospective_pilot_a_not_confirmatory_study` classification, `confirmatory_data_collected: false`, and a USD 0.50 estimated-spend cap. I used offline checks only; the Pilot A run count remains zero.
+I recorded one executed 50-item Pilot A run with classification prospective_pilot_a_not_confirmatory_study and confirmatory_data_collected false. I prepared the locked 260-item confirmatory entrypoint and Colab bundle with a USD 1.25 cap; I have not run it, so confirmatory executions remain zero.

@@ -20,7 +20,7 @@ The third execution records 80 calls, 80 HTTP 200 responses, and USD 0.00494411 
 
 I archived the supplied v9_0_pilot_b_results (3).zip in [2026-11-26_run_4/](2026-11-26_run_4/). Its SHA-256 is 50618f7279799d08f562490455f261bd024094617b72f95ca9d37f799f116f1b, matching the supplied digest. The receipt records 70 calls, 70 HTTP 200 responses, USD 0.00350597 estimated spend, and USD 0.02412054 pre-request reservation. Gemma and Mistral each completed 25/25 item-stage pairs with complete_pipeline: true; Qwen and Llama each completed 2 pairs. Confirmatory data collected is false.
 
-Across the five receipts, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. I found no Pilot A run and no confirmatory study run. I keep all 22 engineering connectivity POST probes separate from Pilot B.
+Across my five Pilot B receipts, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. I also archived one Pilot A execution with 540 HTTP 200 calls, zero retries, and USD 0.04127526 estimated spend. I keep 26 engineering connectivity POST probes separate from both pilots; confirmatory runs remain at zero.
 
 
 ## Fifth receipt — Pilot B passed at 4/4
@@ -29,4 +29,11 @@ I archived `v9_0_pilot_b_results (4).zip` in [2026-11-26_run_5_PASS/](2026-11-26
 
 The fifth execution records 127 calls, 127 HTTP 200 responses, zero transient retries, USD 0.00908310 estimated spend, and USD 0.05747706 reserved under the USD 0.25 cap. Qwen, Gemma, Llama, and Mistral each completed 25/25 item-stage pairs across `TR_01`–`TR_05`; all four have `complete_pipeline: true`. I classify this as a passed prospective Pilot B execution, not confirmatory data.
 
-Across my five Pilot B receipts, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. I have zero Pilot A executions and zero confirmatory study executions. I keep engineering probes separate from these Pilot B counts.
+Across my five Pilot B receipts, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. I have one Pilot A execution and zero confirmatory study executions. I keep all 26 engineering probes separate from the 317 Pilot B calls and 540 Pilot A calls.
+
+
+## Pilot A receipt — 26 November 2026
+
+I archived the supplied v9_0_pilot_a_results.zip in 2026-11-26_pilot_a_run_1/. The source ZIP measures SHA-256 13b17189e60acf71a1e26d3b2a8c8fdcc39910a3eb22c6112ba558e287de321b; the included receipt SHA-256 is 149563d29132439e2be5666b26ce4e1ddba57bae8d2063e0c8b9d3a354825e60. Its internal hash list and ZIP integrity check passed.
+
+The run records 540 HTTP 200 pipeline responses, zero retries, and USD 0.04127526 estimated spend against its USD 0.50 cap. I counted 405 successful item-stage pairs. Qwen completed 39 full five-stage pipelines, Llama 30, Gemma 9, and Mistral 2 across TR_01–TR_40; Pilot A therefore has partial model coverage. The archive's four separate engineering probes all returned HTTP 200 and are not included in the 540 pipeline calls. This remains a prospective Pilot A execution, not confirmatory data.

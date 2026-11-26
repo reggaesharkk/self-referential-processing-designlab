@@ -69,7 +69,7 @@ CANDIDATES: list[dict[str, str]] = [
 ]
 KEYLIKE_RE = re.compile(
     r"(?:AIza[0-9A-Za-z_-]{20,}|sk-[0-9A-Za-z_-]{20,}|"
-    r"gsk_[0-9A-Za-z_-]{20,}|\?key=|(?i:Bearer)\s+[A-Za-z0-9._~+/-]{16,}={0,})"
+    r"gsk_[0-9A-Za-z_-]{20,}|[?]key=|(?i:Bearer)\s+[A-Za-z0-9._~+/-]{16,}={0,})"
 )
 
 

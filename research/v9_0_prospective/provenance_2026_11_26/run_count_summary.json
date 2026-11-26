@@ -1,7 +1,7 @@
 {
-  "schema": "designlab-live-run-accountability-v5",
+  "schema": "designlab-live-run-accountability-v6",
   "as_of_date": "2026-11-26",
-  "source_basis": "local receipts including five supplied Pilot B archives, September and November engineering records, and published PSI result files; not provider billing logs",
+  "source_basis": "local receipts including five Pilot B archives, the supplied Pilot A archive and connectivity report, September and November engineering records, and published PSI result files; not provider billing logs",
   "engineering_connectivity_post_requests": {
     "2026-09-27": {
       "count": 6,
@@ -12,26 +12,27 @@
       }
     },
     "2026-11-26": {
-      "count": 16,
+      "count": 20,
       "http_status_counts": {
-        "200": 16
+        "200": 20
       },
       "run_classification": "engineering_connectivity_not_study_data",
       "saved_probe_outputs": [
         "pilot_receipts/2026-11-26_run_2/api_ping_check_v9.json",
         "pilot_receipts/2026-11-26_run_3/api_ping_check_v9.json",
         "pilot_receipts/2026-11-26_run_4/api_ping_check_v9.json",
-        "pilot_receipts/2026-11-26_run_5_PASS/api_ping_check_v9.json"
+        "pilot_receipts/2026-11-26_run_5_PASS/api_ping_check_v9.json",
+        "pilot_receipts/2026-11-26_pilot_a_run_1/api_ping_check_v9.json"
       ]
     },
-    "total_count": 22,
+    "total_count": 26,
     "http_status_counts_total": {
-      "200": 20,
+      "200": 24,
       "400": 1,
       "404": 1
     }
   },
-  "pilot_a_runs_evidenced": 0,
+  "pilot_a_runs_evidenced": 1,
   "pilot_b_runs_evidenced": 5,
   "pilot_b_calls_started_total": 317,
   "pilot_b_responses_total": 317,
@@ -216,9 +217,8 @@
     }
   ],
   "confirmatory_study_runs_evidenced": 0,
-  "designlab_documented_model_inference_post_calls_total": 339,
   "designlab_provider_catalog_metadata_get_requests": 3,
-  "designlab_provider_http_requests_total_including_metadata": 342,
+  "designlab_provider_http_requests_total_including_metadata": 886,
   "psi_live_colab_runs_evidenced": 1,
   "psi_live_result_rows": 5,
   "psi_documented_local_t4_rows": 4,
@@ -230,7 +230,7 @@
   "api_keys_read_or_logged": false,
   "new_provider_requests_sent_by_assistant_during_audit": 0,
   "frozen_v8_6_3_files_modified": false,
-  "documented_live_experimental_executions_across_designlab_and_psi": 6,
+  "documented_live_experimental_executions_across_designlab_and_psi": 7,
   "pre_run_3_colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
   "pre_run_3_colab_bundle_bytes": 65722,
   "pre_run_3_colab_bundle_members": 24,
@@ -242,12 +242,12 @@
     "entrypoint": "research/v9_0_prospective/pilot_a_v9.py",
     "notebook": "research/v9_0_prospective/DesignLab_v9_0_Colab_PilotA.ipynb",
     "num_items": 50,
-    "selected_items": "first 50 from verified items_pool_v1.json",
     "classification": "prospective_pilot_a_not_confirmatory_study",
     "confirmatory_data_collected": false,
     "budget_cap_usd": 0.5,
-    "execution_evidenced": false,
-    "estimated_spend_usd_using_run_5_per_item_rate": 0.090831
+    "execution_evidenced": true,
+    "receipt": "research/v9_0_prospective/pilot_receipts/2026-11-26_pilot_a_run_1/pilot_a_v9_result.json",
+    "estimated_spend_usd": 0.04127526
   },
   "engineering_connectivity_runs": [
     {
@@ -290,6 +290,249 @@
         "200": 4
       },
       "transient_retries": 0
+    },
+    {
+      "record": "2026-11-26_pilot_a_run_1",
+      "calls": 4,
+      "responses": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "transient_retries": 0,
+      "classification": "engineering_connectivity_not_study_data"
     }
-  ]
+  ],
+  "pilot_a_calls_started_total": 540,
+  "pilot_a_responses_total": 540,
+  "pilot_a_transient_retries_total": 0,
+  "pilot_a_estimated_spend_usd_total": 0.04127526,
+  "pilot_a_budget_cap_usd": 0.5,
+  "pilot_a_successful_item_stage_pairs_total": 405,
+  "pilot_a_complete_five_stage_pipelines_by_model_slot": {
+    "qwen_72b": {
+      "count": 39,
+      "items": [
+        "TR_01",
+        "TR_02",
+        "TR_03",
+        "TR_04",
+        "TR_05",
+        "TR_06",
+        "TR_07",
+        "TR_08",
+        "TR_09",
+        "TR_10",
+        "TR_11",
+        "TR_12",
+        "TR_13",
+        "TR_14",
+        "TR_15",
+        "TR_16",
+        "TR_17",
+        "TR_18",
+        "TR_19",
+        "TR_20",
+        "TR_21",
+        "TR_22",
+        "TR_23",
+        "TR_24",
+        "TR_25",
+        "TR_26",
+        "TR_27",
+        "TR_28",
+        "TR_29",
+        "TR_30",
+        "TR_31",
+        "TR_32",
+        "TR_33",
+        "TR_34",
+        "TR_35",
+        "TR_36",
+        "TR_37",
+        "TR_38",
+        "TR_39"
+      ]
+    },
+    "llama_70b": {
+      "count": 30,
+      "items": [
+        "TR_01",
+        "TR_02",
+        "TR_03",
+        "TR_04",
+        "TR_05",
+        "TR_06",
+        "TR_07",
+        "TR_08",
+        "TR_09",
+        "TR_10",
+        "TR_11",
+        "TR_12",
+        "TR_13",
+        "TR_14",
+        "TR_15",
+        "TR_16",
+        "TR_17",
+        "TR_18",
+        "TR_19",
+        "TR_20",
+        "TR_21",
+        "TR_22",
+        "TR_23",
+        "TR_24",
+        "TR_25",
+        "TR_26",
+        "TR_27",
+        "TR_28",
+        "TR_29",
+        "TR_30"
+      ]
+    },
+    "gemma_27b": {
+      "count": 9,
+      "items": [
+        "TR_01",
+        "TR_02",
+        "TR_03",
+        "TR_04",
+        "TR_05",
+        "TR_06",
+        "TR_07",
+        "TR_08",
+        "TR_09"
+      ]
+    },
+    "mistral_24b": {
+      "count": 2,
+      "items": [
+        "TR_01",
+        "TR_02"
+      ]
+    }
+  },
+  "pilot_a_run_1": {
+    "source_file": "v9_0_pilot_a_results.zip",
+    "source_zip_sha256": "13b17189e60acf71a1e26d3b2a8c8fdcc39910a3eb22c6112ba558e287de321b",
+    "receipt_sha256": "149563d29132439e2be5666b26ce4e1ddba57bae8d2063e0c8b9d3a354825e60",
+    "calls_sha256": "a7bdafd1130b56089d5b0f364be9412d0a3bffc2a9f14071607c855a1ab8258b",
+    "token_spend_report_sha256": "5bc022338352241f47eb8f7f8a509aac2335d6447a1bbefca05d087ff303896b",
+    "ping_report_sha256": "eff2839e27f80b20c59711823b4f2d7684a53e909fe04767aa286d18e7c03118",
+    "calls_started": 540,
+    "responses": 540,
+    "http_status_counts": {
+      "200": 540
+    },
+    "transient_retry_attempts": 0,
+    "estimated_spend_usd": 0.04127526,
+    "budget_cap_usd": 0.5,
+    "successful_item_stage_pairs": 405,
+    "full_pipeline_item_counts_by_slot": {
+      "qwen_72b": 39,
+      "llama_70b": 30,
+      "gemma_27b": 9,
+      "mistral_24b": 2
+    },
+    "item_ids_with_calls": [
+      "TR_01",
+      "TR_02",
+      "TR_03",
+      "TR_04",
+      "TR_05",
+      "TR_06",
+      "TR_07",
+      "TR_08",
+      "TR_09",
+      "TR_10",
+      "TR_11",
+      "TR_12",
+      "TR_13",
+      "TR_14",
+      "TR_15",
+      "TR_16",
+      "TR_17",
+      "TR_18",
+      "TR_19",
+      "TR_20",
+      "TR_21",
+      "TR_22",
+      "TR_23",
+      "TR_24",
+      "TR_25",
+      "TR_26",
+      "TR_27",
+      "TR_28",
+      "TR_29",
+      "TR_30",
+      "TR_31",
+      "TR_32",
+      "TR_33",
+      "TR_34",
+      "TR_35",
+      "TR_36",
+      "TR_37",
+      "TR_38",
+      "TR_39",
+      "TR_40"
+    ],
+    "classification": "prospective_pilot_a_not_confirmatory_study",
+    "confirmatory_data_collected": false
+  },
+  "confirmatory_preparation": {
+    "entrypoint": "research/v9_0_prospective/confirmatory_v9.py",
+    "notebook": "research/v9_0_prospective/DesignLab_v9_0_Colab_Confirmatory.ipynb",
+    "num_items": 260,
+    "selected_items": "all 260 items from the hash-verified pool",
+    "classification": "prospective_confirmatory_study",
+    "confirmatory_data_collected": false,
+    "budget_cap_usd": 1.25,
+    "execution_evidenced": false,
+    "planning_estimated_spend_usd_range": [
+      0.22,
+      0.35
+    ],
+    "offline_validation": {
+      "date": "2026-11-26",
+      "confirmatory_entrypoint": "research/v9_0_prospective/confirmatory_v9.py",
+      "classification": "prospective_confirmatory_study",
+      "num_items": 260,
+      "selected_items": 260,
+      "item_pool_bytes": 75875,
+      "item_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
+      "budget_cap_usd": 1.25,
+      "baseline_logical_calls": 5200,
+      "maximum_logical_calls_with_shared_scrub_fallback": 11960,
+      "maximum_http_attempts_with_transient_retries": 47840,
+      "offline_unit_tests": {
+        "passed": 14,
+        "failed": 0,
+        "item_level_skip_and_continue_test": "passed"
+      },
+      "dry_run": {
+        "status": "passed",
+        "http_calls_started": 0,
+        "http_responses_received": 0,
+        "maximum_http_attempts_including_retries": 47840
+      },
+      "api_keys_read_or_logged": false,
+      "provider_requests_sent_during_validation": 0,
+      "frozen_v8_6_3_files_modified": false,
+      "items_pool_modified": false
+    }
+  },
+  "confirmatory_bundle": {
+    "path": "D:\\v9_0_colab_confirmatory_bundle.zip",
+    "sha256": null,
+    "verified_credential_shaped_matches": 0,
+    "item_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
+    "sha256_note": "Recorded outside the bundle to avoid a recursive hash; the D: audit addendum and SHA-256 sidecar hold the digest."
+  },
+  "pilot_a_successful_item_stage_pairs_by_model_slot": {
+    "qwen_72b": 197,
+    "gemma_27b": 47,
+    "llama_70b": 151,
+    "mistral_24b": 10
+  },
+  "pilot_a_complete_five_stage_pipeline_count_total": 80,
+  "pilot_a_partial_stage_pairs_beyond_complete_pipelines": 5,
+  "designlab_documented_provider_api_post_calls_total": 883
 }

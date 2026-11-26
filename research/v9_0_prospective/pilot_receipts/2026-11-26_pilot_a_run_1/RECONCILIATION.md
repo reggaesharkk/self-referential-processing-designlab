@@ -1,0 +1,5 @@
+# My first live Pilot A receipt
+
+I preserved the supplied ZIP byte-for-byte as `source_v9_0_pilot_a_results_run_1.zip`; its measured SHA-256 is `13b17189e60acf71a1e26d3b2a8c8fdcc39910a3eb22c6112ba558e287de321b`. I verified the ZIP integrity and all six files listed in its included SHA256SUMS.txt. The extracted `pilot_a_v9_result.json`, calls ledger, token/spend report, and connectivity report match the four hashes supplied in the request.
+
+My Pilot A pipeline record contains 540 calls, all HTTP 200, zero transient retries, USD 0.04127526 estimated spend against the USD 0.50 cap, and 405 successful item-stage pairs. I verified 39 complete item pipelines for Qwen, 30 for Llama, 9 for Gemma, and 2 for Mistral. Five additional successful item-stage pairs are partial and do not form a full five-stage pipeline. The four-model connectivity report is a separate engineering check: four HTTP 200 probes and zero retries. I classify this execution as prospective Pilot A, with confirmatory_data_collected false.

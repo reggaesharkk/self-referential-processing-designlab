@@ -31,8 +31,8 @@ EXPECTED_ITEMS_POOL_SHA256 = (
     "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3"
 )
 DEFAULT_BUDGET_USD = 0.25
-MAX_BUDGET_USD = 0.50
-BUDGET_CAP_USD_BY_NUM_ITEMS = {5: 0.25, 50: 0.50, 260: 0.25}
+MAX_BUDGET_USD = 1.25
+BUDGET_CAP_USD_BY_NUM_ITEMS = {5: 0.25, 50: 0.50, 260: 1.25}
 DEFAULT_NUM_ITEMS = 5
 PILOT_ITEMS_PER_RUN = DEFAULT_NUM_ITEMS
 SUPPORTED_NUM_ITEMS = (5, 50, 260)
@@ -750,6 +750,7 @@ def main(argv: list[str] | None = None) -> int:
         "calls": [],
         "per_model_summary": [],
         "per_billing_model_summary": [],
+        "item_level_summary": [],
     }
 
     def checkpoint() -> None:
@@ -782,10 +783,19 @@ def main(argv: list[str] | None = None) -> int:
         for spec in CANDIDATES:
             rate = rates[spec["slot"]]
             api_key = keys[spec["env_var"]]
-            failed = False
+            model_failed = False
             for item in items:
                 item_id = str(item["item_id"])
                 prompt = item["prompt_text"]
+                item_result: dict[str, Any] = {
+                    "slot": spec["slot"],
+                    "model_id": spec["model_id"],
+                    "item_id": item_id,
+                    "available": False,
+                    "status": "in_progress",
+                    "completed_stages": [],
+                }
+                report["item_level_summary"].append(item_result)
                 stage_specs: list[tuple[str, list[dict[str, str]]]] = [
                     (
                         "phase0_harvest",
@@ -802,13 +812,21 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     row.update(provider=spec["provider"], model_id=spec["model_id"])
                     if not row["available"]:
+                        item_result.update(
+                            status="failed_closed",
+                            failed_stage=stage,
+                            availability_blockers=list(row.get("availability_blockers", [])),
+                            error_category=row.get("error_category"),
+                        )
                         if row.get("error_category") in {"pre_request_spend_cap", "pre_request_spend_cap_retry"}:
                             report["stopped_early"] = True
                             report["halt_reason"] = "estimated spend cap reached before request"
                             stopped = True
-                        failed = True
+                        model_failed = True
+                        checkpoint()
                         break
-                if failed:
+                    item_result["completed_stages"].append(stage)
+                if model_failed:
                     break
 
                 perturb_messages = _messages(
@@ -822,24 +840,51 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 row.update(provider=spec["provider"], model_id=spec["model_id"])
                 if not row["available"]:
+                    item_result.update(
+                        status="failed_closed",
+                        failed_stage="utility_perturb",
+                        availability_blockers=list(row.get("availability_blockers", [])),
+                        error_category=row.get("error_category"),
+                    )
                     if row.get("error_category") in {"pre_request_spend_cap", "pre_request_spend_cap_retry"}:
                         report["stopped_early"] = True
                         report["halt_reason"] = "estimated spend cap reached before request"
                         stopped = True
-                    failed = True
+                    model_failed = True
+                    checkpoint()
                     break
+                item_result["completed_stages"].append("utility_perturb")
 
                 row, scrubbed = run_style_scrub_with_repairs(
                     spec, keys, item_id, prompt, perturbed,
                     args.timeout, rates, guard, report, checkpoint,
                 )
                 if not row["available"]:
+                    item_result.update(
+                        failed_stage="utility_style_scrub",
+                        availability_blockers=list(row.get("availability_blockers", [])),
+                        error_category=row.get("error_category"),
+                    )
                     if row.get("error_category") in {"pre_request_spend_cap", "pre_request_spend_cap_retry"}:
                         report["stopped_early"] = True
                         report["halt_reason"] = "estimated spend cap reached before request"
                         stopped = True
-                    failed = True
+                    if (not stopped
+                            and row.get("availability_blockers") == ["style_scrub_word_count_out_of_range"]):
+                        item_result.update(
+                            available=False,
+                            status="skipped_due_to_style_scrub_range",
+                            skip_reason="skipped_due_to_style_scrub_range",
+                            final_style_word_count=row.get("style_scrub_word_count"),
+                            scrubber_billing_slot=row.get("billing_slot"),
+                        )
+                        checkpoint()
+                        continue
+                    item_result["status"] = "failed_closed"
+                    model_failed = True
+                    checkpoint()
                     break
+                item_result["completed_stages"].append("utility_style_scrub")
 
                 evaluations = [
                     (
@@ -864,17 +909,27 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     row.update(provider=spec["provider"], model_id=spec["model_id"])
                     if not row["available"]:
+                        item_result.update(
+                            status="failed_closed",
+                            failed_stage=stage,
+                            availability_blockers=list(row.get("availability_blockers", [])),
+                            error_category=row.get("error_category"),
+                        )
                         if row.get("error_category") in {"pre_request_spend_cap", "pre_request_spend_cap_retry"}:
                             report["stopped_early"] = True
                             report["halt_reason"] = "estimated spend cap reached before request"
                             stopped = True
-                        failed = True
+                        model_failed = True
+                        checkpoint()
                         break
-                if failed:
+                    item_result["completed_stages"].append(stage)
+                if model_failed:
                     break
+                item_result.update(available=True, status="complete", completed_utc=utc_now())
+                checkpoint()
             if stopped:
                 break
-            if failed:
+            if model_failed:
                 report.setdefault("provider_failures", []).append(spec["slot"])
     except KeyboardInterrupt:
         report["stopped_early"] = True
@@ -892,7 +947,7 @@ def main(argv: list[str] | None = None) -> int:
         _save(report, args.output, list(keys.values()))
 
     print(
-        "Wrote redacted Pilot B metrics to "
+        f"Wrote redacted {run_label.replace('_', ' ').title()} metrics to "
         f"{args.output}; calls={len(report['calls'])}; "
         f"estimated_usd={report['total_estimated_usd']:.6f}; "
         f"reserved_usd={report['budget_reserved_usd']:.6f}"

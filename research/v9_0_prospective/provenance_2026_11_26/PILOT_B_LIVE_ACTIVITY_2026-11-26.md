@@ -1,5 +1,7 @@
 # My live-run accountability addendum — 26 November 2026, run 5
 
+I preserve this as my run-5 snapshot. My current cumulative record after Pilot A is in [PILOT_A_LIVE_ACTIVITY_2026-11-26.md](PILOT_A_LIVE_ACTIVITY_2026-11-26.md) and [run_count_summary.json](run_count_summary.json).
+
 I updated this addendum after receiving my fourth Pilot B archive. I reconciled all five local receipts, the September and November engineering probes, and the published PSI live-result files. These are counts I can substantiate from saved records, not provider billing data.
 
 ## Counts I can substantiate
