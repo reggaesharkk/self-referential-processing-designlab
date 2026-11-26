@@ -346,7 +346,8 @@ class RunnerPolicyTests(unittest.TestCase):
     def test_confirmatory_entrypoint_locks_260_and_one_dollar_twenty_five_cap(self) -> None:
         forwarded: list[str] = []
         with patch.object(confirmatory.pilot_b_v9, "main", side_effect=lambda argv: forwarded.extend(argv) or 0):
-            self.assertEqual(confirmatory.main(["--execute"]), 0)
+            self.assertEqual(confirmatory.main(["--execute", "--resume-from", "prior.json"]), 0)
+        self.assertEqual(forwarded[forwarded.index("--resume-from") + 1], "prior.json")
         self.assertEqual(forwarded[forwarded.index("--num-items") + 1], "260")
         self.assertEqual(forwarded[forwarded.index("--budget-usd") + 1], "1.25")
         self.assertIn("--execute", forwarded)
@@ -364,6 +365,136 @@ class RunnerPolicyTests(unittest.TestCase):
         self.assertEqual(snapshot, "2026-11-26")
         self.assertEqual(set(rates), {s["slot"] for s in api.CANDIDATES})
         self.assertEqual(rates["mistral_24b"]["input_usd_per_1m_tokens"], 0.05)
+
+
+class FailFastAndResumeTests(unittest.TestCase):
+    def test_engineering_ping_stops_after_first_http_402(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "ping.json"
+            requested = []
+
+            def fake_request(spec, key, out, report, secrets, timeout):
+                requested.append(spec["slot"])
+                row = {"slot": spec["slot"], "provider": spec["provider"],
+                       "model_id": spec["model_id"], "http_status": 402,
+                       "available": False, "retry_count": 0,
+                       "availability_blockers": ["http_status_not_200"]}
+                report["results"].append(row)
+                report["api_request_ledger"].append({"slot": spec["slot"], "http_status": 402})
+                return row
+
+            with patch.dict(os.environ, {"OPENROUTER_API_KEY": "unit-test-placeholder"}):
+                with patch.object(api, "_tracked_request", side_effect=fake_request):
+                    self.assertEqual(api.main(["--execute", "--output", str(output)]), 2)
+            report = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(requested, [api.CANDIDATES[0]["slot"]])
+        self.assertEqual(report["halt_reason"], "http_402_insufficient_credits")
+        self.assertEqual(report["not_attempted_slots"], [x["slot"] for x in api.CANDIDATES[1:]])
+        self.assertEqual(len(report["results"]), 1)
+
+    def test_pipeline_402_stops_before_other_slots(self) -> None:
+        items = [{"item_id": "TR_01", "category": "test", "prompt_text": "prompt"}]
+        rates = {slot: {"input_usd_per_1m_tokens": 0.1, "output_usd_per_1m_tokens": 0.1}
+                 for slot in (x["slot"] for x in api.CANDIDATES)}
+        seen = []
+
+        def fake_stage(spec, api_key, item_id, stage, messages, timeout, rate,
+                       guard, report, checkpoint, **kwargs):
+            seen.append((spec["slot"], item_id, stage))
+            row = {"call_id": f"call-{len(report['calls']) + 1}", "slot": spec["slot"],
+                   "billing_slot": spec["slot"], "call_role": "tested_model",
+                   "item_id": item_id, "stage": stage, "available": False,
+                   "availability_blockers": ["http_status_not_200"],
+                   "http_status": 402, "error_category": "insufficient_credits",
+                   "http_attempts_started": 1, "http_attempts": [{"http_status": 402}],
+                   "retry_count": 0, "estimated_usd": 0.0,
+                   "budget_reservation_usd": 0.000001, "latency_ms": 1}
+            guard.reserved_usd += 0.000001
+            report["calls"].append(row)
+            return row, ""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "run.json"
+            env = {name: "unit-test-placeholder" for name in set(api.ENV_BY_PROVIDER.values())}
+            with patch.dict(os.environ, env):
+                with patch.object(pilot, "load_items", return_value=(pilot.EXPECTED_ITEMS_POOL_SHA256, items)):
+                    with patch.object(pilot, "load_rate_card", return_value=(rates, "test")):
+                        with patch.object(pilot, "run_stage", side_effect=fake_stage):
+                            self.assertEqual(pilot.main(["--execute", "--output", str(output)]), 2)
+            report = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(len(seen), 1)
+        self.assertEqual(seen[0][0], api.CANDIDATES[0]["slot"])
+        self.assertEqual(report["halt_reason"], "http_402_insufficient_credits")
+        self.assertTrue(report["stopped_early"])
+        self.assertEqual(report["http_calls_started"], 1)
+
+    def test_resume_verifies_and_merges_completed_pairs_without_recalling_them(self) -> None:
+        items = [{"item_id": f"TR_{i:02d}", "category": "test", "prompt_text": f"prompt {i}"}
+                 for i in range(1, 261)]
+        first_id = items[0]["item_id"]
+        complete_calls = [{"call_id": f"old-{i}", "slot": "qwen_72b", "item_id": first_id,
+                           "stage": stage, "available": True, "http_status": 200,
+                           "http_attempts_started": 1, "http_attempts": [{"http_status": 200}],
+                           "estimated_usd": 0.000001, "budget_reservation_usd": 0.000001}
+                          for i, stage in enumerate(pilot.MAX_TOKENS, 1)]
+        complete_row = {"slot": "qwen_72b", "model_id": api.CANDIDATES[0]["model_id"],
+                        "item_id": first_id, "available": True, "status": "complete",
+                        "completed_stages": list(pilot.MAX_TOKENS)}
+        prior = {"run_classification": "prospective_confirmatory_study",
+                 "num_items_requested": 260,
+                 "item_pool_sha256": pilot.EXPECTED_ITEMS_POOL_SHA256,
+                 "selected_first_items": [{"item_id": x["item_id"]} for x in items],
+                 "budget_cap_usd": 1.25, "budget_reserved_usd": 0.000005,
+                 "halt_reason": "http_402_insufficient_credits",
+                 "calls": complete_calls, "item_level_summary": [complete_row]}
+        rates, _ = pilot.load_rate_card(V9_DIR / "model_rates_v9.json")
+        seen = []
+
+        def fake_stage(spec, api_key, item_id, stage, messages, timeout, rate,
+                       guard, report, checkpoint, **kwargs):
+            seen.append((spec["slot"], item_id, stage))
+            guard.reserved_usd += 0.000003
+            row = {"call_id": f"pilot-{len(report['calls']) + 1:05d}", "slot": spec["slot"],
+                   "billing_slot": spec["slot"], "call_role": "tested_model",
+                   "item_id": item_id, "stage": stage, "available": False,
+                   "availability_blockers": ["http_status_not_200"],
+                   "http_status": 402, "error_category": "insufficient_credits",
+                   "http_attempts_started": 1, "http_attempts": [{"http_status": 402}],
+                   "retry_count": 0, "estimated_usd": 0.0,
+                   "budget_reservation_usd": 0.000003, "latency_ms": 1}
+            report["calls"].append(row)
+            return row, ""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            prior_path = Path(temp_dir) / "prior.json"
+            output = Path(temp_dir) / "resumed.json"
+            prior_path.write_text(json.dumps(prior), encoding="utf-8")
+            bad_prior = {**prior, "item_pool_sha256": "0" * 64}
+            bad_path = Path(temp_dir) / "wrong-pool.json"
+            bad_path.write_text(json.dumps(bad_prior), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "item_pool_sha256"):
+                pilot.load_resume_receipt(bad_path, pilot.EXPECTED_ITEMS_POOL_SHA256, items)
+            env = {name: "unit-test-placeholder" for name in set(api.ENV_BY_PROVIDER.values())}
+            with patch.dict(os.environ, env):
+                with patch.object(pilot, "load_items", return_value=(pilot.EXPECTED_ITEMS_POOL_SHA256, items)):
+                    with patch.object(pilot, "load_rate_card", return_value=(rates, "test")):
+                        with patch.object(pilot, "run_stage", side_effect=fake_stage):
+                            self.assertEqual(pilot.main([
+                                "--execute", "--num-items", "260", "--budget-usd", "1.25",
+                                "--resume-from", str(prior_path), "--output", str(output),
+                            ]), 2)
+            merged = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(seen, [("qwen_72b", "TR_02", "phase0_harvest")])
+        self.assertEqual(len(merged["calls"]), len(complete_calls) + 1)
+        self.assertEqual(merged["calls"][:len(complete_calls)], complete_calls)
+        self.assertEqual(merged["resume_metadata"]["completed_pairs_reused"], 1)
+        self.assertEqual(merged["budget_cap_usd"], 1.25)
+        self.assertEqual(merged["budget_reserved_usd"], 0.000008)
+        self.assertEqual(merged["halt_reason"], "http_402_insufficient_credits")
+        rows = {(x["slot"], x["item_id"]): x for x in merged["item_level_summary"]}
+        self.assertEqual(rows[("qwen_72b", "TR_01")]["status"], "complete")
+        self.assertEqual(rows[("qwen_72b", "TR_02")]["status"], "failed_closed")
+
 
 
 if __name__ == "__main__":

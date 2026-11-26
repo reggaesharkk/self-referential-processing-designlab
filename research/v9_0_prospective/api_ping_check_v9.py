@@ -432,13 +432,18 @@ def main(argv: list[str] | None = None) -> int:
             "minimum_inter_call_spacing_seconds": MIN_INTER_CALL_SPACING_SECONDS,
         },
         "api_request_ledger": [], "results": [],
+        "halt_reason": None, "not_attempted_slots": [],
     }
     _save(report, output, [key])
     try:
-        for spec in CANDIDATES:
+        for index, spec in enumerate(CANDIDATES):
             row = _tracked_request(spec, key, output, report, [key], args.timeout)
             print(f"{row['slot']} {row['model_id']}: HTTP {row['http_status']} "
                   f"available={row['available']} retries={row.get('retry_count', 0)}")
+            if row.get("http_status") == 402:
+                report["halt_reason"] = "http_402_insufficient_credits"
+                report["not_attempted_slots"] = [candidate["slot"] for candidate in CANDIDATES[index + 1:]]
+                break
     finally:
         _save(report, output, [key])
     all_available = len(report["results"]) == len(CANDIDATES) and all(

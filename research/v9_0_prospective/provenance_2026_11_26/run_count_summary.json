@@ -1,7 +1,7 @@
 {
-  "schema": "designlab-live-run-accountability-v6",
+  "schema": "designlab-live-run-accountability-v7",
   "as_of_date": "2026-11-26",
-  "source_basis": "local receipts including five Pilot B archives, the supplied Pilot A archive and connectivity report, September and November engineering records, and published PSI result files; not provider billing logs",
+  "source_basis": "local receipts including five Pilot B archives, one Pilot A archive, partial confirmatory run 1 and its four separate engineering probes, September and November engineering records, and published PSI result files; not provider billing logs",
   "engineering_connectivity_post_requests": {
     "2026-09-27": {
       "count": 6,
@@ -12,9 +12,9 @@
       }
     },
     "2026-11-26": {
-      "count": 20,
+      "count": 24,
       "http_status_counts": {
-        "200": 20
+        "200": 24
       },
       "run_classification": "engineering_connectivity_not_study_data",
       "saved_probe_outputs": [
@@ -22,12 +22,13 @@
         "pilot_receipts/2026-11-26_run_3/api_ping_check_v9.json",
         "pilot_receipts/2026-11-26_run_4/api_ping_check_v9.json",
         "pilot_receipts/2026-11-26_run_5_PASS/api_ping_check_v9.json",
-        "pilot_receipts/2026-11-26_pilot_a_run_1/api_ping_check_v9.json"
+        "pilot_receipts/2026-11-26_pilot_a_run_1/api_ping_check_v9.json",
+        "confirmatory_receipts/2026-11-26_run_1_partial_402/api_ping_check_v9.json"
       ]
     },
-    "total_count": 26,
+    "total_count": 30,
     "http_status_counts_total": {
-      "200": 24,
+      "200": 28,
       "400": 1,
       "404": 1
     }
@@ -48,7 +49,11 @@
       "items_with_call_records": [
         "TR_01"
       ],
-      "classification": "prospective_pilot_b_not_confirmatory_study"
+      "classification": "prospective_pilot_b_not_confirmatory_study",
+      "http_status_counts": {
+        "200": 9,
+        "401": 1
+      }
     },
     {
       "run_number": 2,
@@ -216,9 +221,9 @@
       "classification": "prospective_pilot_b_passed_not_confirmatory_study"
     }
   ],
-  "confirmatory_study_runs_evidenced": 0,
+  "confirmatory_study_runs_evidenced": 1,
   "designlab_provider_catalog_metadata_get_requests": 3,
-  "designlab_provider_http_requests_total_including_metadata": 886,
+  "designlab_provider_http_requests_total_including_metadata": 1070,
   "psi_live_colab_runs_evidenced": 1,
   "psi_live_result_rows": 5,
   "psi_documented_local_t4_rows": 4,
@@ -230,14 +235,14 @@
   "api_keys_read_or_logged": false,
   "new_provider_requests_sent_by_assistant_during_audit": 0,
   "frozen_v8_6_3_files_modified": false,
-  "documented_live_experimental_executions_across_designlab_and_psi": 7,
+  "documented_live_experimental_executions_across_designlab_and_psi": 8,
   "pre_run_3_colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
   "pre_run_3_colab_bundle_bytes": 65722,
   "pre_run_3_colab_bundle_members": 24,
   "pre_run_3_colab_bundle_credential_shaped_matches": 0,
   "earlier_colab_bundle_sha256": "0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035",
   "colab_bundle_sha256": null,
-  "colab_bundle_sha256_note": "Pilot A and Pilot B bundle hashes are recorded outside the archives in D:\\Self_Referential_DesignLab_Audit_2026-11-26\\RUN5_PILOT_A_PUBLICATION_2026-11-26.md because the ledgers are included inside each bundle.",
+  "colab_bundle_sha256_note": "The final confirmatory bundle digest is stored outside the bundle in D:\\v9_0_colab_confirmatory_bundle.zip.sha256 and the D: audit record.",
   "pilot_a_preparation": {
     "entrypoint": "research/v9_0_prospective/pilot_a_v9.py",
     "notebook": "research/v9_0_prospective/DesignLab_v9_0_Colab_PilotA.ipynb",
@@ -300,6 +305,17 @@
       },
       "transient_retries": 0,
       "classification": "engineering_connectivity_not_study_data"
+    },
+    {
+      "record": "2026-11-26_confirmatory_run_1",
+      "calls": 4,
+      "responses": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "transient_retries": 0,
+      "classification": "engineering_connectivity_not_study_data",
+      "receipt": "confirmatory_receipts/2026-11-26_run_1_partial_402/api_ping_check_v9.json"
     }
   ],
   "pilot_a_calls_started_total": 540,
@@ -483,9 +499,9 @@
     "num_items": 260,
     "selected_items": "all 260 items from the hash-verified pool",
     "classification": "prospective_confirmatory_study",
-    "confirmatory_data_collected": false,
+    "confirmatory_data_collected": true,
     "budget_cap_usd": 1.25,
-    "execution_evidenced": false,
+    "execution_evidenced": true,
     "planning_estimated_spend_usd_range": [
       0.22,
       0.35
@@ -503,9 +519,10 @@
       "maximum_logical_calls_with_shared_scrub_fallback": 11960,
       "maximum_http_attempts_with_transient_retries": 47840,
       "offline_unit_tests": {
-        "passed": 14,
+        "passed": 17,
         "failed": 0,
-        "item_level_skip_and_continue_test": "passed"
+        "new_http_402_fail_fast_tests": "passed",
+        "new_resume_merge_test": "passed"
       },
       "dry_run": {
         "status": "passed",
@@ -516,15 +533,46 @@
       "api_keys_read_or_logged": false,
       "provider_requests_sent_during_validation": 0,
       "frozen_v8_6_3_files_modified": false,
-      "items_pool_modified": false
-    }
+      "items_pool_modified": false,
+      "resume_dry_run": {
+        "status": "passed",
+        "completed_pairs_recognized": 27,
+        "item_pool_sha256_verified": true,
+        "http_calls_started": 0,
+        "api_keys_read": false,
+        "receipt_sha256": "d83caec7364395005fd1fc5fd1ac61332cbd650c5cb74b3e322a2a205955fa7f",
+        "stdout": "DRY RUN: frozen pool verified; selected 260 leading items (prospective_confirmatory_study); baseline logical calls=5200; maximum logical calls with shared scrub fallback=11960; maximum HTTP attempts including retries=47840; resume completed pairs=27; no keys read and no HTTP requests sent."
+      }
+    },
+    "partial_run_count": 1,
+    "receipt": "confirmatory_receipts/2026-11-26_run_1_partial_402/confirmatory_v9_result.json",
+    "calls_started": 180,
+    "responses": 180,
+    "http_status_counts": {
+      "200": 176,
+      "402": 4
+    },
+    "estimated_spend_usd": 0.01704482,
+    "budget_reserved_usd": 0.10182801,
+    "resume_from_supported": true,
+    "fail_fast_http_402": true
   },
   "confirmatory_bundle": {
     "path": "D:\\v9_0_colab_confirmatory_bundle.zip",
     "sha256": null,
     "verified_credential_shaped_matches": 0,
     "item_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
-    "sha256_note": "Recorded outside the bundle to avoid a recursive hash; the D: audit addendum and SHA-256 sidecar hold the digest."
+    "sha256_note": "Recorded outside the bundle to avoid a recursive hash; the D: audit addendum and SHA-256 sidecar hold the digest.",
+    "budget_cap_usd": 1.25,
+    "bundle_sha256_note": "The final digest is recorded in D:\\v9_0_colab_confirmatory_bundle.zip.sha256 and the D: audit record, outside the ZIP to avoid a circular hash.",
+    "members": 86,
+    "manifests_verified": 22,
+    "previous_bundle_sha256": "a32e21fea3c0120a71faa226a32534635252275e125e17d25f1230d6091f4828",
+    "previous_bundle_preserved_as": "D:\\Self_Referential_DesignLab_Audit_2026-11-26\\v9_0_colab_confirmatory_bundle_pre_run7_2026-11-26.zip",
+    "files_scanned_including_nested_archives": 128,
+    "bundle_bytes_note": "Exact archive size and SHA-256 are recorded outside the bundle in the D: publication record and sidecar.",
+    "pre_final_build_sha256": "de6a5846bf4c5ac583df1c4e789d3d3ed7373e1ca6d9ac98d02a6172c7854125",
+    "pre_final_build_preserved_as": "D:\\Self_Referential_DesignLab_Audit_2026-11-26\\v9_0_colab_confirmatory_bundle_pre_final_2026-11-26.zip"
   },
   "pilot_a_successful_item_stage_pairs_by_model_slot": {
     "qwen_72b": 197,
@@ -534,5 +582,107 @@
   },
   "pilot_a_complete_five_stage_pipeline_count_total": 80,
   "pilot_a_partial_stage_pairs_beyond_complete_pipelines": 5,
-  "designlab_documented_provider_api_post_calls_total": 883
+  "designlab_documented_provider_api_post_calls_total": 1067,
+  "confirmatory_run_1": {
+    "run_label": "2026-11-26_run_1_partial_402",
+    "source_file": "v9_0_confirmatory_results.zip",
+    "source_zip_sha256": "3c95c500177a6960a791eaa2633e96ac7c0a270abefa2956a549faf92b6d9f3c",
+    "result_sha256": "d83caec7364395005fd1fc5fd1ac61332cbd650c5cb74b3e322a2a205955fa7f",
+    "calls_sha256": "7c0b32ac9651ddcebb318186064efb1ce2bcb9ea258b6977c06c2ecfe620b293",
+    "token_spend_report_sha256": "0793e6645cef71462e60ee3811e75569194c823c30a5546e22aad5b57664d3f4",
+    "receipt": "confirmatory_receipts/2026-11-26_run_1_partial_402/confirmatory_v9_result.json",
+    "calls_started": 180,
+    "responses": 180,
+    "http_status_counts": {
+      "200": 176,
+      "402": 4
+    },
+    "estimated_spend_usd": 0.01704482,
+    "budget_reserved_usd": 0.10182801,
+    "budget_cap_usd": 1.25,
+    "classification": "prospective_confirmatory_study_partial_http_402",
+    "confirmatory_data_collected": true,
+    "first_402": {
+      "slot": "qwen_72b",
+      "item_id": "TR_28",
+      "stage": "phase1_digit_evaluation"
+    },
+    "additional_402_calls_after_first": [
+      {
+        "slot": "gemma_27b",
+        "item_id": "TR_01",
+        "stage": "phase0_harvest"
+      },
+      {
+        "slot": "llama_70b",
+        "item_id": "TR_01",
+        "stage": "phase0_harvest"
+      },
+      {
+        "slot": "mistral_24b",
+        "item_id": "TR_01",
+        "stage": "phase0_harvest"
+      }
+    ],
+    "receipt_halt_fields": {
+      "stopped_early": false,
+      "halt_reason": null
+    },
+    "receipt_vs_request_reconciliation": "The archived call ledger shows three additional HTTP 402 calls after the first 402, despite the request description that the run halted cleanly. The saved receipt is preserved unchanged; the runner now stops on the first HTTP 402.",
+    "qwen_72b": {
+      "complete_items": 27,
+      "complete_items_range": "TR_01–TR_27",
+      "successful_stage_pairs": 138,
+      "complete_item_stage_pairs": 135,
+      "additional_partial_stages_on_TR_28": 3
+    },
+    "gemma_27b": {
+      "complete_items": 0,
+      "successful_item_stage_pairs": 0
+    },
+    "llama_70b": {
+      "complete_items": 0,
+      "successful_item_stage_pairs": 0
+    },
+    "mistral_24b": {
+      "complete_items": 0,
+      "successful_item_stage_pairs": 0
+    },
+    "separate_engineering_connectivity_probes": {
+      "calls": 4,
+      "http_status_counts": {
+        "200": 4
+      },
+      "transient_retries": 0
+    },
+    "user_reported_provider_wallet_balance_usd": 0.2005,
+    "user_reported_provider_wallet_balance_independently_verified": false,
+    "account_screenshot_observation": {
+      "weekly_api_key_limit_usd": 50.0,
+      "used_usd": 0.2,
+      "remaining_usd": 49.8,
+      "displayed_reset": "2026-11-30 05:30",
+      "timezone": "not visible in supplied image",
+      "source_file": "C:\\Users\\Asus\\AppData\\Local\\Temp\\codex-clipboard-8b2c166f-eefc-44b7-a9b8-6d781d725dbb.png",
+      "sha256": "85fc4e1d13c93859a7d85f5903d4d0a369a4a966946d794b472a489308f15efd",
+      "bytes": 16263
+    },
+    "effective_local_budget_cap_usd": 1.25,
+    "prior_reservation_headroom_under_cap_usd": 1.14817199,
+    "budget_interpretation": "I keep the project cap at USD 1.25 because it is lower than the screenshot weekly-key headroom. The reported wallet credit and weekly key limit are separate; HTTP 402 may persist until provider credit is available."
+  },
+  "pilot_b_http_status_counts_total": {
+    "200": 316,
+    "401": 1
+  },
+  "pilot_a_http_status_counts_total": {
+    "200": 540
+  },
+  "designlab_post_http_status_counts_total": {
+    "200": 1060,
+    "400": 1,
+    "401": 1,
+    "402": 4,
+    "404": 1
+  }
 }

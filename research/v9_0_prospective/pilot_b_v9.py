@@ -99,9 +99,11 @@ def call_bounds(num_items: int) -> dict[str, int]:
 class SpendGuard:
     """Reserve a conservative per-call estimated cost before sending."""
 
-    def __init__(self, cap_usd: float) -> None:
+    def __init__(self, cap_usd: float, initial_reserved_usd: float = 0.0) -> None:
+        if initial_reserved_usd < 0 or initial_reserved_usd > cap_usd:
+            raise ValueError("prior budget reservation must be between zero and the aggregate cap")
         self.cap_usd = cap_usd
-        self.reserved_usd = 0.0
+        self.reserved_usd = initial_reserved_usd
 
     @staticmethod
     def prompt_upper_bound(messages: list[dict[str, str]]) -> int:
@@ -252,6 +254,100 @@ def load_rate_card(path: Path) -> tuple[dict[str, dict[str, Any]], str]:
     return rates, str(document.get("pricing_snapshot_date", "unknown"))
 
 
+def load_resume_receipt(
+    path: Path, pool_hash: str, items: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Load a confirmatory checkpoint and verify every imported complete pair."""
+    try:
+        raw = path.read_bytes()
+        prior = json.loads(raw.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        raise ValueError("BLOCKED: resume receipt is missing or invalid JSON") from None
+    if not isinstance(prior, dict):
+        raise ValueError("BLOCKED: resume receipt root must be a JSON object")
+    if prior.get("item_pool_sha256") != pool_hash:
+        raise ValueError("BLOCKED: resume receipt item_pool_sha256 does not match the verified pool")
+    try:
+        prior_num_items = int(prior.get("num_items_requested", 0))
+    except (TypeError, ValueError):
+        prior_num_items = 0
+    if (prior.get("run_classification") != "prospective_confirmatory_study"
+            or prior_num_items != 260):
+        raise ValueError("BLOCKED: --resume-from requires a 260-item prospective confirmatory receipt")
+
+    wanted_ids = [str(item["item_id"]) for item in items]
+    selected = prior.get("selected_first_items")
+    if (len(wanted_ids) != 260 or not isinstance(selected, list)
+            or any(not isinstance(row, dict) for row in selected)
+            or [str(row.get("item_id")) for row in selected] != wanted_ids):
+        raise ValueError("BLOCKED: resume receipt selected item IDs do not match the verified pool slice")
+
+    calls = prior.get("calls")
+    summaries = prior.get("item_level_summary")
+    if not isinstance(calls, list) or not isinstance(summaries, list):
+        raise ValueError("BLOCKED: resume receipt has no call ledger or item-level summary")
+    valid_slots = {spec["slot"] for spec in CANDIDATES}
+    valid_ids = set(wanted_ids)
+    call_ids: set[str] = set()
+    calls_by_pair: dict[tuple[str, str], set[str]] = {}
+    for call in calls:
+        if not isinstance(call, dict):
+            raise ValueError("BLOCKED: resume receipt contains a malformed call record")
+        slot = call.get("slot")
+        item_id = str(call.get("item_id"))
+        stage = call.get("stage")
+        if slot not in valid_slots or item_id not in valid_ids or stage not in MAX_TOKENS:
+            raise ValueError("BLOCKED: resume receipt contains an unknown slot, item, or stage")
+        call_id = call.get("call_id")
+        if call_id is not None and str(call_id) in call_ids:
+            raise ValueError("BLOCKED: resume receipt contains duplicate call IDs")
+        if call_id is not None:
+            call_ids.add(str(call_id))
+        if call.get("available") is True and call.get("http_status") == 200:
+            calls_by_pair.setdefault((str(slot), item_id), set()).add(str(stage))
+
+    required_stages = set(MAX_TOKENS)
+    completed: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in summaries:
+        if not isinstance(row, dict):
+            raise ValueError("BLOCKED: resume receipt contains a malformed item summary")
+        if row.get("status") != "complete":
+            continue
+        slot = row.get("slot")
+        item_id = str(row.get("item_id"))
+        pair = (str(slot), item_id)
+        if slot not in valid_slots or item_id not in valid_ids or row.get("available") is not True:
+            raise ValueError("BLOCKED: resume receipt marks an invalid item pair complete")
+        if pair in completed:
+            raise ValueError("BLOCKED: resume receipt repeats a completed item pair")
+        completed_stages = set(row.get("completed_stages", []))
+        evidenced_stages = calls_by_pair.get(pair, set())
+        if not required_stages.issubset(completed_stages) or not required_stages.issubset(evidenced_stages):
+            raise ValueError(f"BLOCKED: completed item pair {slot}/{item_id} lacks successful call evidence")
+        completed[pair] = row
+
+    try:
+        if "budget_reserved_usd" not in prior or "budget_cap_usd" not in prior:
+            raise ValueError
+        reserved = float(prior["budget_reserved_usd"])
+        prior_cap = float(prior["budget_cap_usd"])
+        call_reservations = sum(float(call.get("budget_reservation_usd") or 0.0) for call in calls)
+    except (TypeError, ValueError):
+        raise ValueError("BLOCKED: resume receipt has invalid budget accounting") from None
+    if (reserved < 0 or prior_cap <= 0 or reserved > prior_cap
+            or abs(call_reservations - reserved) > 1e-8):
+        raise ValueError("BLOCKED: resume receipt budget accounting is inconsistent")
+
+    return {
+        "report": prior,
+        "calls": calls,
+        "completed_rows": list(completed.values()),
+        "completed_pairs": completed,
+        "prior_reserved_usd": reserved,
+        "prior_cap_usd": prior_cap,
+        "receipt_sha256": hashlib.sha256(raw).hexdigest(),
+    }
+
 def _messages(system: str, user: str) -> list[dict[str, str]]:
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
@@ -296,7 +392,12 @@ def run_stage(
     tested_slot = tested_slot or spec["slot"]
     tested_model_id = tested_model_id or spec["model_id"]
     billing_slot = spec["slot"]
-    call_id = f"pilot-{len(report['calls']) + 1:05d}"
+    used_call_ids = {str(c.get("call_id")) for c in report["calls"] if c.get("call_id") is not None}
+    next_call_number = len(report["calls"]) + 1
+    call_id = f"pilot-{next_call_number:05d}"
+    while call_id in used_call_ids:
+        next_call_number += 1
+        call_id = f"pilot-{next_call_number:05d}"
     reserved = guard.reserve(
         messages, output_cap,
         rate["input_usd_per_1m_tokens"], rate["output_usd_per_1m_tokens"],
@@ -484,6 +585,8 @@ def run_style_scrub_with_repairs(
             call_role="shared_utility_scrubber", scrubber_route_role=route_role,
             fallback_reason=fallback_reason,
         )
+        if row.get("http_status") == 402:
+            return row, current
         for attempt_number in range(1, MAX_STYLE_REPAIRS + 1):
             if row.get("available"):
                 return row, current
@@ -509,6 +612,8 @@ def run_style_scrub_with_repairs(
                 call_role="shared_utility_scrubber", scrubber_route_role=route_role,
                 fallback_reason=fallback_reason,
             )
+            if row.get("http_status") == 402:
+                return row, current
         return row, current
 
     row, current = scrub_with(primary_slot, "primary")
@@ -622,6 +727,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--items", type=Path, default=repo_root() / "items_pool_v1.json")
     parser.add_argument("--rates", type=Path, default=Path(__file__).resolve().parent / "model_rates_v9.json")
     parser.add_argument("--budget-usd", type=float, default=DEFAULT_BUDGET_USD)
+    parser.add_argument("--resume-from", type=Path, default=None,
+                        help="verified prior confirmatory result JSON; completed item pairs are reused")
     parser.add_argument("--num-items", type=int, choices=SUPPORTED_NUM_ITEMS, default=DEFAULT_NUM_ITEMS,
                         help="number of leading pool items: 5 Pilot B, 50 Pilot A, or 260 confirmatory")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
@@ -641,6 +748,15 @@ def main(argv: list[str] | None = None) -> int:
     try:
         pool_hash, items = load_items(args.items, args.num_items)
         rates, pricing_date = load_rate_card(args.rates)
+        resume_data = None
+        if args.resume_from is not None:
+            if args.num_items != 260:
+                raise ValueError("BLOCKED: --resume-from is supported only for the 260-item confirmatory run")
+            resume_data = load_resume_receipt(args.resume_from, pool_hash, items)
+            if abs(resume_data["prior_cap_usd"] - args.budget_usd) > 1e-9:
+                raise ValueError("BLOCKED: resume receipt and resumed run must use the same aggregate --budget-usd cap")
+            if resume_data["prior_reserved_usd"] > args.budget_usd:
+                raise ValueError("BLOCKED: prior reserved spend already exceeds the aggregate --budget-usd cap")
     except ValueError as exc:
         print(str(exc))
         return 2
@@ -654,6 +770,7 @@ def main(argv: list[str] | None = None) -> int:
             f"{bounds['maximum_logical_calls_with_shared_scrub_fallback']}; "
             f"maximum HTTP attempts including retries="
             f"{bounds['maximum_http_attempts_with_transient_retries']}; "
+            f"resume completed pairs={len(resume_data['completed_pairs']) if resume_data else 0}; "
             "no keys read and no HTTP requests sent."
         )
         return 0
@@ -669,7 +786,8 @@ def main(argv: list[str] | None = None) -> int:
         print("BLOCKED: missing required environment variables: " + ", ".join(missing))
         return 2
     keys = {name: os.environ[name] for name in ENV_BY_PROVIDER.values()}
-    guard = SpendGuard(args.budget_usd)
+    initial_reservation = resume_data["prior_reserved_usd"] if resume_data else 0.0
+    guard = SpendGuard(args.budget_usd, initial_reserved_usd=initial_reservation)
     classification, confirmatory_data_collected = run_classification_for_num_items(args.num_items)
     bounds = call_bounds(args.num_items)
     report: dict[str, Any] = {
@@ -743,14 +861,23 @@ def main(argv: list[str] | None = None) -> int:
         "logical_call_records": 0,
         "http_calls_started": 0,
         "http_responses_received": 0,
-        "budget_reserved_usd": 0.0,
+        "budget_reserved_usd": initial_reservation,
         "total_estimated_usd": 0.0,
+        "resume_metadata": ({
+            "source_receipt_sha256": resume_data["receipt_sha256"],
+            "source_path": str(args.resume_from.resolve()),
+            "prior_calls_preserved": len(resume_data["calls"]),
+            "completed_pairs_reused": len(resume_data["completed_pairs"]),
+            "prior_reserved_usd_in_aggregate_cap": initial_reservation,
+            "aggregate_budget_cap_usd": args.budget_usd,
+            "prior_halt_reason": resume_data["report"].get("halt_reason"),
+        } if resume_data else None),
         "stopped_early": False,
         "halt_reason": None,
-        "calls": [],
+        "calls": list(resume_data["calls"]) if resume_data else [],
         "per_model_summary": [],
         "per_billing_model_summary": [],
-        "item_level_summary": [],
+        "item_level_summary": list(resume_data["completed_rows"]) if resume_data else [],
     }
 
     def checkpoint() -> None:
@@ -778,6 +905,19 @@ def main(argv: list[str] | None = None) -> int:
 
     checkpoint()
 
+    def halt_for_row(row: dict[str, Any]) -> bool:
+        if row.get("http_status") == 402:
+            report["stopped_early"] = True
+            report["halt_reason"] = "http_402_insufficient_credits"
+            report["terminal_http_status"] = 402
+            return True
+        if row.get("error_category") in {"pre_request_spend_cap", "pre_request_spend_cap_retry"}:
+            report["stopped_early"] = True
+            report["halt_reason"] = "estimated spend cap reached before request"
+            return True
+        return False
+
+    completed_pairs = set(resume_data["completed_pairs"]) if resume_data else set()
     stopped = False
     try:
         for spec in CANDIDATES:
@@ -786,6 +926,8 @@ def main(argv: list[str] | None = None) -> int:
             model_failed = False
             for item in items:
                 item_id = str(item["item_id"])
+                if (spec["slot"], item_id) in completed_pairs:
+                    continue
                 prompt = item["prompt_text"]
                 item_result: dict[str, Any] = {
                     "slot": spec["slot"],
@@ -812,6 +954,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     row.update(provider=spec["provider"], model_id=spec["model_id"])
                     if not row["available"]:
+                        stopped = halt_for_row(row)
                         item_result.update(
                             status="failed_closed",
                             failed_stage=stage,
@@ -840,6 +983,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 row.update(provider=spec["provider"], model_id=spec["model_id"])
                 if not row["available"]:
+                    stopped = halt_for_row(row)
                     item_result.update(
                         status="failed_closed",
                         failed_stage="utility_perturb",
@@ -860,6 +1004,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.timeout, rates, guard, report, checkpoint,
                 )
                 if not row["available"]:
+                    stopped = halt_for_row(row)
                     item_result.update(
                         failed_stage="utility_style_scrub",
                         availability_blockers=list(row.get("availability_blockers", [])),
@@ -909,6 +1054,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     row.update(provider=spec["provider"], model_id=spec["model_id"])
                     if not row["available"]:
+                        stopped = halt_for_row(row)
                         item_result.update(
                             status="failed_closed",
                             failed_stage=stage,

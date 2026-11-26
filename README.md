@@ -29,39 +29,20 @@ I added the 27 September provenance files without replacing the frozen specifica
 
 ## My prospective v9 records
 
-I keep the prospective runner and its receipts under [`research/v9_0_prospective/`](research/v9_0_prospective/). I verified the local `items_pool_v1.json` at 75,875 bytes with SHA-256 `128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3`; I do not track or modify that pool in Git.
+I keep my prospective runner, receipts, and accountability ledger under [`research/v9_0_prospective/`](research/v9_0_prospective/). I verified `items_pool_v1.json` at 75,875 bytes with SHA-256 `128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3`; I do not track or modify the pool in Git.
 
-I have five documented prospective Pilot B executions:
+I have five documented Pilot B executions: 317 HTTP calls and USD 0.01926445 estimated spend in total. Run 5 passed all four tested slots across TR_01–TR_05. I also have one 50-item Pilot A execution: 540 HTTP 200 calls, zero retries, USD 0.04127526 estimated spend, and 405 successful item-stage pairs across TR_01–TR_40. Its four model slots completed 39, 30, 9, and 2 full item pipelines, so its model coverage was partial.
 
-- My first receipt records 10 calls, 10 responses, USD 0.00053603 estimated spend, and TR_01.
-- My second records 30 calls, 30 HTTP 200 responses, and USD 0.00119524 estimated spend. It contains calls for TR_01 and TR_02; no model slot completed the full five-item pipeline.
-- My third records 80 calls, 80 HTTP 200 responses, and USD 0.00494411 estimated spend. Gemma completed 25/25 item-stage pairs; Llama completed 17/25, including all stages for TR_01–TR_03; Qwen completed 2 and Mistral 7.
-- My fourth records 70 calls, 70 HTTP 200 responses, and USD 0.00350597 estimated spend. Gemma and Mistral each completed 25/25 item-stage pairs across the five items.
-- My fifth records 127 HTTP 200 responses, zero transient retries, and USD 0.00908310 estimated spend. Qwen, Gemma, Llama, and Mistral each completed 25/25 item-stage pairs across TR_01–TR_05; this is my first 4/4 passing Pilot B receipt.
+I have one **partial prospective confirmatory execution**. Its archived receipt records 180 pipeline call responses (176 HTTP 200 and four HTTP 402), USD 0.01704482 estimated spend, and USD 0.10182801 reserved against the USD 1.25 cap. Qwen completed TR_01–TR_27 and three stages on TR_28: 138 successful stage pairs total, of which 135 belong to the 27 complete items. The other three slots completed no item pipeline. The receipt JSON says `stopped_early=false` and `halt_reason=null`; its ledger shows the first 402 at Qwen/TR_28/Phase 1 followed by three additional 402 calls at Phase 0 for the other slots. I preserve the receipt as received and have added fail-fast handling for future runs. This is one partial confirmatory run, and the receipt marks `confirmatory_data_collected=true`.
 
-Across the five Pilot B executions, I recorded 317 calls, 317 responses, and USD 0.01926445 estimated spend. The run 3 source ZIP has measured SHA-256 68859768a5bf7ff1f682df2ad54fe938dd28b70b3c66ad4ae692912d59430600, differing from the digest stated in that request. Run 4's source ZIP matches its stated SHA-256 50618f7279799d08f562490455f261bd024094617b72f95ca9d37f799f116f1b. I preserved both archives and their reconciliations.
+The ZIP also contains four separate engineering connectivity probes, all HTTP 200. I count these as non-study probes, not confirmatory pipeline calls. Across all archived DesignLab evidence I count 30 engineering POST probes (28 HTTP 200, one HTTP 400, one HTTP 404), 317 Pilot B calls (316 HTTP 200, one HTTP 401), 540 Pilot A calls, and 180 confirmatory pipeline calls (176 HTTP 200, four HTTP 402): **1,067 documented POST requests**. Their combined status totals are 1,060 HTTP 200, one HTTP 400, one HTTP 401, one HTTP 404, and four HTTP 402. Three provider catalog metadata GETs bring the saved DesignLab request count to 1,070. These are local receipt counts, not provider billing logs; activity outside preserved records cannot be excluded. My PSI repository has one live run, but its files do not establish an exact external API request count. Across DesignLab and PSI I can document eight live experimental executions: five Pilot B, one Pilot A, one partial confirmatory run, and one PSI run.
 
-I count seven documented live experimental executions across DesignLab and PSI: five Pilot B runs, one Pilot A run, and one PSI benchmark run. My Pilot A run covered 50 items, recorded 540 HTTP 200 calls, zero retries, USD 0.04127526 estimated spend, and 405 successful item-stage pairs (80 full five-stage item pipelines plus five partial stage pairs). Its full-pipeline counts are Qwen 39, Llama 30, Gemma 9, and Mistral 2. I prepared a 260-item confirmatory entrypoint but have not run it.
+The budget screenshot shows a USD 50 weekly API-key limit, USD 0.20 used, and USD 49.80 remaining. The local confirmatory cap remains USD 1.25, so the effective cap is the lower USD 1.25. The user-reported USD 0.2005 provider balance that coincided with the 402 response is a separate credit boundary and was not independently queried. My resume path verifies the pool and prior complete item-stage records, skips completed item pairs, and charges prior reservations against the same USD 1.25 aggregate cap. The first run reserved USD 0.10182801, leaving USD 1.14817199 of reservation headroom under that cap. A weekly key limit does not restore provider wallet credit.
 
-I recorded 20 November v9 engineering connectivity probes across five archived run outputs, all HTTP 200. My 27 September engineering records contain six probes: four HTTP 200, one HTTP 400, and one HTTP 404. I count 26 engineering probes in total (24 HTTP 200, one HTTP 400, one HTTP 404). I also found three provider catalog metadata requests and count them separately.
-
-| Activity I recorded | Count | What I can claim |
-| --- | ---: | --- |
-| Engineering connectivity probes | 26 | Non-study POST requests; 24 HTTP 200, 1 HTTP 400, 1 HTTP 404 |
-| Pilot A executions | 1 | 540 HTTP 200 calls, zero retries, USD 0.04127526 estimated spend; 405 successful item-stage pairs, with partial model coverage |
-| Prospective Pilot B executions | 5 | 317 calls total; USD 0.01926445 estimated spend; run 5 passed 4/4 slots |
-| Confirmatory study executions | 0 | I have not collected confirmatory data |
-| Provider catalog metadata GETs | 3 | I count these separately from model-inference calls |
-
-I therefore have 883 documented DesignLab POST requests in these records: 26 engineering probes, 317 Pilot B calls, and 540 Pilot A calls. Three provider catalog metadata GET requests bring the saved DesignLab HTTP request count to 886. I have not run the 260-item confirmatory entrypoint; confirmatory study runs remain at 0.
-
-I keep the current reconciliation in [research/v9_0_prospective/provenance_2026_11_26/](research/v9_0_prospective/provenance_2026_11_26/) and all Pilot B and Pilot A receipts in [research/v9_0_prospective/pilot_receipts/](research/v9_0_prospective/pilot_receipts/).
+I keep the partial confirmatory receipt in [`research/v9_0_prospective/confirmatory_receipts/`](research/v9_0_prospective/confirmatory_receipts/) and current totals in [`research/v9_0_prospective/provenance_2026_11_26/run_count_summary.json`](research/v9_0_prospective/provenance_2026_11_26/run_count_summary.json). I sent no provider requests and read or logged no API key while making this update. My frozen v8.6.3 files and `items_pool_v1.json` remain unchanged.
 
 ## How I use this repository
 
 I use OSF for the archival source record and this repository as my readable, version-controlled technical mirror. I keep each result tied to its method, scope, source revision, and recorded limitations.
 
 **Rights boundary — effective 1 October 2026:** I reserve new author-owned original material first published here from this date. Earlier express licenses remain in force for the material they cover. I follow [my rights policy](RIGHTS_POLICY_2026_10_01.md) and [my portfolio evidence standard](https://github.com/reggaesharkk/Reggae-shark-universe-/blob/main/PORTFOLIO_EVIDENCE_AND_RIGHTS_STANDARD_2026_10_01.md).
-
-
-I recorded one executed 50-item Pilot A run with classification prospective_pilot_a_not_confirmatory_study and confirmatory_data_collected false. I prepared the locked 260-item confirmatory entrypoint and Colab bundle with a USD 1.25 cap; I have not run it, so confirmatory executions remain zero.
