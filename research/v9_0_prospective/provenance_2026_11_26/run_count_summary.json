@@ -80,5 +80,11 @@
   "items_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
   "api_keys_read_or_logged": false,
   "new_provider_requests_sent_by_assistant_during_audit": 0,
-  "frozen_v8_6_3_files_modified": false
+  "frozen_v8_6_3_files_modified": false,
+  "colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
+  "colab_bundle_bytes": 65722,
+  "colab_bundle_members": 24,
+  "previous_colab_bundle_sha256": "0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035",
+  "colab_bundle_credential_shaped_matches": 0,
+  "documented_live_experimental_executions_across_designlab_and_psi": 3
 }

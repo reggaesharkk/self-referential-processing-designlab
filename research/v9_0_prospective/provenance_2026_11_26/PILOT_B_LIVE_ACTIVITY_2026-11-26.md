@@ -29,6 +29,10 @@ The four separate v9 connectivity checks returned HTTP 200 and recorded `finish_
 
 I found one published PSI v5.0 live Colab execution dated `2026-11-25T21:08:18.171266+00:00`. The release contains five model result rows: four local T4 GPU results and one Groq API result. It does not contain a request ledger that supports an exact Groq HTTP-call total. I preserve this run in PSI and do not include unknown PSI API requests in my DesignLab totals.
 
+## Colab bundle I rebuilt
+
+I preserved my earlier Colab bundle in the D: audit folder at SHA-256 `0be63f216f3496c2f4a1efc12397aa45e13e2c362eddb47937edbe78488b0035`. I rebuilt `D:\v9_0_colab_pilot_bundle.zip` from my current v9 runner, both Pilot B receipt folders, the verified item pool, and the one-code-cell notebook. The new bundle contains 24 files, retains the pool at its verified SHA-256, and has SHA-256 `b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b`. I found zero provider-key-shaped values in the bundle or its nested source archive.
+
 ## Source records and hashes
 
 - First Pilot B source archive: `v9_0_pilot_b_results (17).zip`; SHA-256 `7d0d9103e112288137bd52cc315f0560b0f20df45c23e70cb2140e888902b4a7`.
