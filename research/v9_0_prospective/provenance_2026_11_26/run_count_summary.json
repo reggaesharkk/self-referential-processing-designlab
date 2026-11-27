@@ -1,7 +1,7 @@
 {
   "schema": "designlab-live-run-accountability-v7",
-  "as_of_date": "2026-11-26",
-  "source_basis": "local receipts including five Pilot B archives, one Pilot A archive, partial confirmatory run 1 and its four separate engineering probes, September and November engineering records, and published PSI result files; not provider billing logs",
+  "as_of_date": "2026-11-27",
+  "source_basis": "local receipts including five Pilot B archives, one Pilot A archive, partial confirmatory run 1 and its four separate engineering probes, September and November engineering records, and published PSI result files; not provider billing logs; my 26 November Qwen local-HF checkpoint",
   "engineering_connectivity_post_requests": {
     "2026-09-27": {
       "count": 6,
@@ -221,7 +221,7 @@
       "classification": "prospective_pilot_b_passed_not_confirmatory_study"
     }
   ],
-  "confirmatory_study_runs_evidenced": 1,
+  "confirmatory_study_runs_evidenced": 2,
   "designlab_provider_catalog_metadata_get_requests": 3,
   "designlab_provider_http_requests_total_including_metadata": 1070,
   "psi_live_colab_runs_evidenced": 1,
@@ -235,7 +235,7 @@
   "api_keys_read_or_logged": false,
   "new_provider_requests_sent_by_assistant_during_audit": 0,
   "frozen_v8_6_3_files_modified": false,
-  "documented_live_experimental_executions_across_designlab_and_psi": 8,
+  "documented_live_experimental_executions_across_designlab_and_psi": 9,
   "pre_run_3_colab_bundle_sha256": "b75967165449abcdc6feab026839d7b3ae928376b84f25e46d03739236e60c3b",
   "pre_run_3_colab_bundle_bytes": 65722,
   "pre_run_3_colab_bundle_members": 24,
@@ -686,16 +686,32 @@
     "404": 1
   },
   "local_hf_confirmatory_variant": {
-    "status": "prepared_not_run",
-    "live_runs_evidenced": 0,
-    "gpu_execution_attempts": 0,
-    "completed_items": 0,
+    "status": "in_progress",
+    "live_runs_evidenced": 1,
+    "gpu_execution_attempts": 1,
+    "completed_items": 101,
     "external_inference_api_requests": 0,
     "model_inference_api_spend_usd": 0.0,
     "offline_validation": "24 repository tests passed; verified-pool local-hf dry run; one-cell notebook syntax checked; GCE VM bundle prepared but not executed",
     "item_pool_sha256": "128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3",
     "protocol_variant": "v9-local-hf-4bit-four-family",
     "scope_note": "Distinct prospective model/backend variant; not an execution of frozen v8.6.3 and not evidence that the 260-item run is complete.",
-    "gce_vm_target": "existing Debian x86_64 VM; GPU presence not established by supplied terminal screenshot"
+    "gce_vm_target": "existing Debian x86_64 VM; GPU presence not established by supplied terminal screenshot",
+    "processed_items": 105,
+    "skipped_items": 4,
+    "skipped_item_ids": [
+      "TR_11",
+      "BE_26",
+      "BE_41",
+      "BE_43"
+    ],
+    "failed_items": 0,
+    "remaining_unprocessed_items": 155,
+    "local_generation_calls": 673,
+    "slot": "qwen_7b",
+    "gpu": "Tesla T4",
+    "updated_utc": "2026-11-26T19:53:48.145652+00:00",
+    "checkpoint_path": "research/v9_0_prospective/confirmatory_receipts/2026-11-26_local_hf_qwen_7b_part1/confirmatory_local_hf_qwen_7b.json",
+    "checkpoint_sha256": "4f95d62927275b1888c4e844d34465a6fb92f1450189dca99942c97876174548"
   }
 }
