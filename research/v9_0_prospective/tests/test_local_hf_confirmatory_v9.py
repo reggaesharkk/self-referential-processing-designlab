@@ -60,6 +60,7 @@ def make_complete_checkpoint(items: list[dict[str, str]], slot: str) -> dict:
         "calls": calls,
         "item_level_summary": [row],
         "model_revisions": {},
+        "tokenizer_revisions": {},
         "per_model_summary": [{"slot": slot, "complete_pipeline": False}],
     }
 
@@ -71,6 +72,9 @@ class FakeRuntime:
 
     def revisions(self, slots: list[str]) -> dict[str, str]:
         return {slot: "offline-revision-" + slot for slot in slots}
+
+    def tokenizer_revisions(self, slots: list[str]) -> dict[str, str]:
+        return {slot: "offline-tokenizer-revision-" + slot for slot in slots}
 
     def load_seconds(self, slots: list[str]) -> dict[str, float]:
         return {slot: 0.0 for slot in slots}
@@ -136,6 +140,30 @@ class LocalHFPolicyTests(unittest.TestCase):
         self.assertIn("--resume-from", seen)
         self.assertIn("--execute", seen)
 
+    def test_gemma_template_fallback_preserves_system_and_user_meaning(self) -> None:
+        class GemmaLikeTokenizer:
+            def __init__(self) -> None:
+                self.adapted_messages = None
+
+            def apply_chat_template(self, messages: list[dict[str, str]], **kwargs: object) -> str:
+                if any(message["role"] == "system" for message in messages):
+                    raise ValueError("System role is not supported")
+                self.adapted_messages = messages
+                return "encoded prompt"
+
+        tokenizer = GemmaLikeTokenizer()
+        original_system = "Follow the rubric. Return exactly one ASCII digit."
+        original_user = "Evaluate whether the answer preserves the item's meaning."
+        encoded = local._apply_chat_template_safe(
+            tokenizer, local._messages(original_system, original_user),
+        )
+        self.assertEqual(encoded, "encoded prompt")
+        self.assertEqual(len(tokenizer.adapted_messages), 1)
+        folded_user = tokenizer.adapted_messages[0]["content"]
+        self.assertTrue(folded_user.startswith("System instructions:\n" + original_system))
+        self.assertIn("User request:\n" + original_user, folded_user)
+
+
     def test_gpu_preflight_requires_at_least_14_gib_cuda_memory(self) -> None:
         t4 = {"gpu_name": "Tesla T4", "gpu_total_memory_bytes": 16_000_000_000}
         self.assertEqual(local.validate_gpu_device_summary(t4)["gpu_name"], "Tesla T4")
@@ -196,6 +224,11 @@ class LocalHFPolicyTests(unittest.TestCase):
         model_calls = [entry for entry in calls if entry[0] == "model"]
         self.assertIn("quantization_config", model_calls[0][2])
         self.assertNotIn("quantization_config", model_calls[1][2])
+        self.assertEqual(pool.revisions(["gemma_9b"])["gemma_9b"], "offline-model-revision")
+        self.assertEqual(
+            pool.tokenizer_revisions(["gemma_9b"])["gemma_9b"],
+            "offline-tokenizer-revision",
+        )
 
     def test_checkpoint_loader_reuses_only_verified_complete_items(self) -> None:
         items = make_items()
@@ -209,6 +242,64 @@ class LocalHFPolicyTests(unittest.TestCase):
             path.write_text(json.dumps(bad), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "item-pool SHA-256"):
                 local.load_local_checkpoint(path, local.EXPECTED_ITEMS_POOL_SHA256, items, "qwen_7b")
+
+    def test_resume_preserves_terminal_style_skips_without_retries(self) -> None:
+        items = make_items()
+        prior = make_complete_checkpoint(items, "qwen_7b")
+        skipped_id = items[1]["item_id"]
+        prior["calls"].extend({
+            "call_id": f"localhf-qwen_7b-{index + 6:06d}",
+            "slot": "qwen_7b",
+            "billing_slot": local.UTILITY_SCRUBBER_BY_SLOT["qwen_7b"],
+            "item_id": skipped_id,
+            "stage": "utility_style_scrub",
+            "available": False,
+            "local_generation": True,
+            "http_request_sent": False,
+            "estimated_usd": 0.0,
+            "style_scrub_word_count": 44,
+            "repair_attempt": index,
+        } for index in range(local.STYLE_REPAIR_ATTEMPTS + 1))
+        terminal_skip = {
+            "slot": "qwen_7b",
+            "item_id": skipped_id,
+            "status": "skipped_due_to_style_scrub_range",
+            "skip_reason": "skipped_due_to_style_scrub_range",
+            "failed_stage": "utility_style_scrub",
+            "available": False,
+            "final_style_word_count": 44,
+            "completed_stages": ["phase0_harvest", "utility_perturb"],
+        }
+        prior["item_level_summary"].append(terminal_skip)
+        prior["prior_item_attempt_history"] = [{"item_id": "TR_000", "history": "retain me"}]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            checkpoint = root / "qwen.json"
+            checkpoint.write_text(json.dumps(prior), encoding="utf-8")
+            loaded = local.load_local_checkpoint(
+                checkpoint, local.EXPECTED_ITEMS_POOL_SHA256, items, "qwen_7b",
+            )
+            self.assertEqual(loaded["terminal_skip_item_ids"], {skipped_id})
+            report = local._build_initial_report(
+                local.EXPECTED_ITEMS_POOL_SHA256, items, "qwen_7b", checkpoint, loaded,
+            )
+            self.assertEqual(report["prior_item_attempt_history"], prior["prior_item_attempt_history"])
+            self.assertIn(terminal_skip, report["item_level_summary"])
+            status = local.run_local_confirmatory(
+                local.EXPECTED_ITEMS_POOL_SHA256, items, "qwen_7b", checkpoint, checkpoint,
+                FakeRuntime(),
+            )
+            resumed = json.loads(checkpoint.read_text(encoding="utf-8"))
+        self.assertEqual(status, 2)
+        self.assertEqual(resumed["item_level_summary"][1]["status"], "skipped_due_to_style_scrub_range")
+        self.assertEqual(resumed["item_level_summary"][1]["item_id"], skipped_id)
+        self.assertEqual(resumed["prior_item_attempt_history"], prior["prior_item_attempt_history"])
+        self.assertEqual(
+            sum(call["item_id"] == skipped_id for call in resumed["calls"]),
+            local.STYLE_REPAIR_ATTEMPTS + 1,
+        )
+        self.assertEqual(resumed["tokenizer_revisions"]["qwen_7b"], "offline-tokenizer-revision-qwen_7b")
+        self.assertRegex(resumed["runner_source_sha256"], r"^[0-9a-f]{64}$")
 
     def test_completed_item_is_flushed_before_a_later_disconnect(self) -> None:
         items = make_items(2)

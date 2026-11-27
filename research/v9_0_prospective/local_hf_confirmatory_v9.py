@@ -129,11 +129,48 @@ def _messages(system: str, user: str) -> list[dict[str, str]]:
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
+def _apply_chat_template_safe(tokenizer: Any, messages: list[dict[str, str]]) -> Any:
+    """Apply a chat template, folding system text into the first user turn if required."""
+    try:
+        return tokenizer.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors="pt",
+        )
+    except (ValueError, NotImplementedError) as exc:
+        system_messages = [message["content"] for message in messages if message.get("role") == "system"]
+        if not system_messages or "system" not in str(exc).lower():
+            raise
+        if not any(message.get("role") == "user" for message in messages):
+            raise
+        adapted = [dict(message) for message in messages if message.get("role") != "system"]
+        adapted_user_index = next(
+            index for index, message in enumerate(adapted) if message.get("role") == "user"
+        )
+        original_user = adapted[adapted_user_index]["content"]
+        preserved_system = "\n\n".join(system_messages)
+        adapted[adapted_user_index]["content"] = (
+            "System instructions:\n" + preserved_system
+            + "\n\nUser request:\n" + original_user
+        )
+        return tokenizer.apply_chat_template(
+            adapted,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors="pt",
+        )
+
+
 def _tokenizer_version(package: str) -> str | None:
     try:
         return importlib.metadata.version(package)
     except importlib.metadata.PackageNotFoundError:
         return None
+
+
+def _runner_source_sha256() -> str:
+    return hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest()
 
 
 def runtime_versions() -> dict[str, str | None]:
@@ -227,14 +264,26 @@ def load_local_checkpoint(path: Path, pool_hash: str, items: list[dict[str, Any]
         if call.get("available") is True:
             successful.setdefault((slot, item_id), set()).add(str(call.get("stage")))
     complete_rows: list[dict[str, Any]] = []
+    terminal_skip_rows: list[dict[str, Any]] = []
     completed_ids: set[str] = set()
+    terminal_skip_ids: set[str] = set()
+    summarized_ids: set[str] = set()
     for row in summaries:
         if not isinstance(row, dict) or row.get("slot") != slot:
             raise ValueError("BLOCKED: resume checkpoint contains a malformed item summary")
         item_id = str(row.get("item_id", ""))
-        if item_id not in wanted:
-            raise ValueError("BLOCKED: resume checkpoint contains an item outside the verified pool")
-        if row.get("status") != "complete":
+        status = row.get("status")
+        if item_id not in wanted or item_id in summarized_ids:
+            raise ValueError("BLOCKED: resume checkpoint contains an outside or duplicate item summary")
+        summarized_ids.add(item_id)
+        if status == "skipped_due_to_style_scrub_range":
+            if (row.get("skip_reason") != status or row.get("available") is not False
+                    or row.get("failed_stage") != "utility_style_scrub"):
+                raise ValueError("BLOCKED: resume checkpoint misstates a terminal style-scrub skip")
+            terminal_skip_ids.add(item_id)
+            terminal_skip_rows.append(row)
+            continue
+        if status != "complete":
             continue
         if item_id in completed_ids or set(row.get("completed_stages", [])) != set(STAGE_ORDER):
             raise ValueError("BLOCKED: resume checkpoint repeats or misstates a completed item")
@@ -246,9 +295,20 @@ def load_local_checkpoint(path: Path, pool_hash: str, items: list[dict[str, Any]
         "report": prior,
         "calls": calls,
         "completed_rows": complete_rows,
+        "terminal_skip_rows": terminal_skip_rows,
         "completed_item_ids": completed_ids,
-        "prior_incomplete_rows": [row for row in summaries if row.get("status") != "complete"],
+        "terminal_skip_item_ids": terminal_skip_ids,
+        "prior_retryable_rows": [
+            row for row in summaries
+            if row.get("status") not in {"complete", "skipped_due_to_style_scrub_range"}
+        ],
         "model_revisions": prior.get("model_revisions", {}),
+        "tokenizer_revisions": prior.get("tokenizer_revisions", {}),
+        "runner_source_sha256": prior.get("runner_source_sha256"),
+        "runner_source_sha256_history": prior.get(
+            "runner_source_sha256_history",
+            [prior.get("runner_source_sha256")] if prior.get("runner_source_sha256") else [],
+        ),
     }
 
 
@@ -330,12 +390,16 @@ class LocalHFModelPool:
         )
         model.eval()
         model.config.use_cache = True
-        revision = (getattr(model.config, "_commit_hash", None)
-                    or tokenizer.init_kwargs.get("_commit_hash"))
+        revision = getattr(model.config, "_commit_hash", None)
+        tokenizer_revision = (
+            tokenizer.init_kwargs.get("_commit_hash")
+            or getattr(tokenizer, "_commit_hash", None)
+        )
         loaded = {
             "tokenizer": tokenizer,
             "model": model,
-            "revision": str(revision) if revision else None,
+            "model_revision": str(revision) if revision else None,
+            "tokenizer_revision": str(tokenizer_revision) if tokenizer_revision else None,
             "load_seconds": round(time.perf_counter() - started, 3),
             "embedding_device": str(model.get_input_embeddings().weight.device),
         }
@@ -348,12 +412,7 @@ class LocalHFModelPool:
         tokenizer = loaded["tokenizer"]
         model = loaded["model"]
         torch = self._torch
-        encoded = tokenizer.apply_chat_template(
-            messages,
-            tokenize=True,
-            add_generation_prompt=True,
-            return_tensors="pt",
-        )
+        encoded = _apply_chat_template_safe(tokenizer, messages)
         encoded = encoded.to(model.get_input_embeddings().weight.device)
         attention_mask = torch.ones_like(encoded)
         started = time.perf_counter()
@@ -377,11 +436,15 @@ class LocalHFModelPool:
             "input_tokens": int(encoded.shape[-1]),
             "output_tokens": int(new_ids.shape[-1]),
             "latency_ms": elapsed,
-            "model_revision": loaded["revision"],
+            "model_revision": loaded["model_revision"],
+            "tokenizer_revision": loaded["tokenizer_revision"],
         }
 
     def revisions(self, slots: list[str]) -> dict[str, str | None]:
-        return {slot: self.load(slot)["revision"] for slot in slots}
+        return {slot: self.load(slot)["model_revision"] for slot in slots}
+
+    def tokenizer_revisions(self, slots: list[str]) -> dict[str, str | None]:
+        return {slot: self.load(slot)["tokenizer_revision"] for slot in slots}
 
     def load_seconds(self, slots: list[str]) -> dict[str, float]:
         return {slot: float(self._load_times.get(slot, 0.0)) for slot in slots}
@@ -497,6 +560,7 @@ def _call_generation(
         "provider": "local-hf",
         "model_id": spec["model_id"],
         "model_revision": output.get("model_revision"),
+        "tokenizer_revision": output.get("tokenizer_revision"),
         "item_id": item_id,
         "stage": stage,
         "repair_attempt": repair_attempt,
@@ -579,7 +643,7 @@ def _build_initial_report(
     incomplete_history = list(prior.get("prior_item_attempt_history", []))
     interrupted_history = list(prior.get("prior_interrupted_item_ids", []))
     if resume:
-        incomplete_history.extend(resume["prior_incomplete_rows"])
+        incomplete_history.extend(resume["prior_retryable_rows"])
         if prior.get("last_interrupted_item_id"):
             interrupted_history.append(str(prior["last_interrupted_item_id"]))
     return {
@@ -604,16 +668,25 @@ def _build_initial_report(
         "deterministic_generation": POLICY["deterministic_generation"],
         "runner_policy": POLICY,
         "policy_sha256": POLICY_SHA256,
+        "runner_source_sha256": _runner_source_sha256(),
+        "runner_source_sha256_history": list(dict.fromkeys(
+            (resume["runner_source_sha256_history"] if resume else [])
+            + ([resume["runner_source_sha256"]] if resume and resume["runner_source_sha256"] else [])
+            + [_runner_source_sha256()]
+        )),
         "external_inference_api_requests": 0,
         "provider_http_requests": 0,
         "estimated_model_api_spend_usd": 0.0,
         "total_estimated_usd": 0.0,
         "model_revisions": dict(resume["model_revisions"]) if resume else {},
+        "tokenizer_revisions": dict(resume["tokenizer_revisions"]) if resume else {},
         "model_load_seconds": dict(prior.get("model_load_seconds", {})),
         "runtime": runtime_versions(),
         "device": dict(prior.get("device", {})),
         "calls": list(resume["calls"]) if resume else [],
-        "item_level_summary": list(resume["completed_rows"]) if resume else [],
+        "item_level_summary": (
+            list(resume["completed_rows"]) + list(resume["terminal_skip_rows"]) if resume else []
+        ),
         "prior_item_attempt_history": incomplete_history,
         "prior_interrupted_item_ids": interrupted_history,
         "resume_metadata": ({
@@ -785,11 +858,13 @@ def run_local_confirmatory(
     report = _build_initial_report(pool_hash, items, selected_slots[0] if len(selected_slots) == 1 else "all",
                                    output_path, resume)
     selected_ids = [str(item["item_id"]) for item in items]
-    prior_complete = set(resume["completed_item_ids"]) if resume else set()
+    prior_terminal = (
+        resume["completed_item_ids"] | resume["terminal_skip_item_ids"] if resume else set()
+    )
     current_slot = selected_slots[0] if len(selected_slots) == 1 else None
     try:
         # A completed checkpoint can be verified and returned without loading models.
-        if current_slot and len(prior_complete) == EXPECTED_ITEMS:
+        if current_slot and len(prior_terminal) == EXPECTED_ITEMS:
             _refresh_summary(report, current_slot, selected_ids)
             _atomic_write_json(output_path, report)
             print(f"{current_slot}: already complete; reused all {EXPECTED_ITEMS} checkpointed items; model API spend USD 0.00")
@@ -801,15 +876,20 @@ def run_local_confirmatory(
             scrubber_slot = UTILITY_SCRUBBER_BY_SLOT[selected_slot]
             required_model_slots = list(dict.fromkeys([selected_slot, scrubber_slot]))
             revisions = runtime.revisions(required_model_slots)
+            tokenizer_revisions = runtime.tokenizer_revisions(required_model_slots)
             if resume:
                 for loaded_slot, old_revision in resume["model_revisions"].items():
                     if old_revision and revisions.get(loaded_slot) != old_revision:
                         raise RuntimeError("resume blocked: Hugging Face model revision differs from the prior checkpoint")
+                for loaded_slot, old_revision in resume["tokenizer_revisions"].items():
+                    if old_revision and tokenizer_revisions.get(loaded_slot) != old_revision:
+                        raise RuntimeError("resume blocked: Hugging Face tokenizer revision differs from the prior checkpoint")
             report["model_revisions"].update(revisions)
+            report["tokenizer_revisions"].update(tokenizer_revisions)
             report["model_load_seconds"].update(runtime.load_seconds(required_model_slots))
             for item in items:
                 item_id = str(item["item_id"])
-                if selected_slot == current_slot and item_id in prior_complete:
+                if selected_slot == current_slot and item_id in prior_terminal:
                     continue
                 report["current_item_id"] = item_id
                 item_row = _run_item(runtime, report, selected_slot, item)
@@ -820,7 +900,7 @@ def run_local_confirmatory(
                 print(f"[{selected_slot}] {len(report['item_level_summary']):03d}/{EXPECTED_ITEMS} {item_id}: {item_row['status']}; model API spend USD 0.00")
             if hasattr(runtime, "unload_all"):
                 runtime.unload_all()
-            prior_complete = set()
+            prior_terminal = set()
             resume = None
             current_slot = selected_slot
 
@@ -904,7 +984,20 @@ def merge_slot_checkpoints(checkpoint_paths: list[Path], output_path: Path) -> d
         "selected_slots": list(LOCAL_MODELS),
         "runner_policy": POLICY,
         "policy_sha256": POLICY_SHA256,
+        "runner_source_sha256": _runner_source_sha256(),
+        "runner_source_sha256_history": sorted({
+            digest
+            for report in reports
+            for digest in report.get(
+                "runner_source_sha256_history",
+                [report.get("runner_source_sha256")] if report.get("runner_source_sha256") else [],
+            )
+            if digest
+        } | {_runner_source_sha256()}),
         "model_revisions": {slot: slot_to_report[slot].get("model_revisions", {}) for slot in LOCAL_MODELS},
+        "tokenizer_revisions": {
+            slot: slot_to_report[slot].get("tokenizer_revisions", {}) for slot in LOCAL_MODELS
+        },
         "per_model_summary": [slot_to_report[slot]["per_model_summary"][0] for slot in LOCAL_MODELS],
         "item_level_summary": summaries,
         "calls": calls,
