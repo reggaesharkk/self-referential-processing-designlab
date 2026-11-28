@@ -1,18 +1,28 @@
-<p align="center"><a href="https://github.com/reggaesharkk/Reggae-shark-universe-"><img src="https://raw.githubusercontent.com/reggaesharkk/Reggae-shark-universe-/main/assets/universe_bar.svg" alt="My research portfolio" width="100%" /></a></p>
+# Self-Referential Processing Design Lab
 
-<p align="center"><a href="https://github.com/reggaesharkk/Reggae-shark-universe-">My research map</a> &nbsp;·&nbsp; <a href="https://github.com/reggaesharkk?tab=repositories">My public repositories</a> &nbsp;·&nbsp; <a href="https://orcid.org/0009-0002-1170-4487">My ORCID</a></p>
+I’m Prince Upadhyay. I study a question about how language models judge answers: **does a model evaluate an answer differently when it wrote that answer itself?** Recognizable wording can complicate that comparison. A model might respond to a familiar writing style even when two answers convey the same information.
 
-> I keep the evidence, scope, and open questions beside my work.
+## How I study the question
 
----
+I separate three questions that are easy to confuse. Can I measure a difference reliably? Can I change an answer’s style while keeping it useful? And does authorship affect the model’s judgment?
 
-# My Self-Referential Processing Research
+I used simulations to tackle the first question. In Phase 7, I set the size of the authorship effect myself, including a condition with zero effect, then checked how well two statistical models recovered it. I locked the comparison before running 4,000 fits. One model met my criteria for further study. [Phase 7 design lock](research/phase7/phase7_design_lock.md) · [Technical report](research/phase7/final_release/DesignLab_Phase7_Final_Technical_Report_v1.0.md)
 
-**I am Prince Upadhyay, an independent researcher.** I use this repository to record my Self-Referential Processing research program, its Design Lab work, and the evidence I have produced.
+My current v9 experiment tackles the second question. I collect an answer, make a small wording change, and give it to a **different model family** to rewrite in a neutral style. The original model then makes two yes/no judgments: is the rewrite still useful, and did it remove noticeable style while preserving utility? I keep the original item, the roles of the models, and the outcome of each stage linked in the run record. These checks tell me how well the procedure works before I draw conclusions about authorship. [v9 method and analysis rules](research/v9_0_prospective/README.md)
 
-## My local GPU progress on 28 November 2026
+## My master lock and research record
 
-I have processed 420 of 1,040 planned model/item pairs across four families. My checkpoints record 374 complete pipelines, 46 style-scrub skips, zero failed items, and 2,804 local generations at USD 0.00 external inference spend.
+**My frozen protocol is recorded in `MASTER_LOCK_v8_6_3.md`.** It is the reference for what I specified in advance. My readiness audit records the recovered lock’s SHA-256 as `b3394f637a73ffe835866862d4781cb8928e137c586bd8d79241d9c3713ccbbf`. I keep the consolidated research record on OSF alongside the earlier foundation. [Consolidated OSF record](https://osf.io/nv7dz/) · [Original foundation](https://osf.io/37h2y/) · [Master-lock verification record](research/v8_6_3_readiness/README.md)
+
+Collection under v8.6.3 is paused. I pinned all 12 open-weight model sources, but the audit still required final model deployments, closed-provider snapshot evidence, endpoint checks, and a locked runtime. I track the later v9 work under its own model and analysis rules.
+
+## My live v9 work
+
+I recorded five Pilot B runs, one 50-item Pilot A run, and one partial OpenRouter confirmatory run. Pilot B passed all four model slots on its five-item slice. The OpenRouter run stopped making successful requests after a credit error. I keep the per-run counts, costs, and receipts in the [accountability ledger](research/v9_0_prospective/provenance_2026_11_26/run_count_summary.json).
+
+### Local GPU checkpoints · 28 November 2026
+
+I plan to process the same 260 items with each of four model families. So far I have processed **420 of 1,040 model/item pairs**. Of those, 374 completed all five stages and 46 were skipped after the neutral rewrite missed the 45–55 word window. I recorded 2,804 local generations and USD 0.00 in external inference spend.
 
 | Tested family | Processed | Complete | Skipped | Remaining | Generations |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -21,43 +31,6 @@ I have processed 420 of 1,040 planned model/item pairs across four families. My 
 | Llama 8B | 0 | 0 | 0 | 260 | 0 |
 | Mistral 7B | 0 | 0 | 0 | 260 | 0 |
 
-I reached 61.5% of the Gemma pool on a Tesla T4. I processed all 52 TR, BE, and DP items and EP_01 through EP_04, including a style-scrub skip on EP_02. I verified that the first 135 item records and 904 generations match my earlier Gemma checkpoint. [Gemma part 2 and SHA-256 manifest](research/v9_0_prospective/confirmatory_receipts/2026-11-28_local_hf_gemma_9b_part2/)
-
-## My research record
-
-- I maintain the master OSF record at [10.17605/OSF.IO/NV7DZ](https://osf.io/nv7dz/).
-- I keep the earlier frozen foundation at [10.17605/OSF.IO/37H2Y](https://osf.io/37h2y/).
-- I preserve earlier registrations as historical records; I do not overwrite them.
-- I use the `research/` tree for my code, analyses, simulation results, manifests, and provenance records.
-
-## Work I have completed
-
-I completed Phase 7 under its locked simulation design, including 4,000 GLMM fits. Under the phase's prespecified calibration rule, I retained the correlated M1 architecture as a candidate for future prospectively registered work. I treat this as simulation-based methodological validation. I do not present it as live confirmatory evidence that a self-referential processing effect exists.
-
-## My frozen v8.6.3 record
-
-I keep the frozen v8.6.3 specification and its Gate 5 analysis unchanged. My 27 September 2026 operational-readiness audit is preserved under [`research/v8_6_3_readiness/`](research/v8_6_3_readiness/). The audit found the protocol **PAUSED / BLOCKED** pending final roster bindings, closed-snapshot identity evidence, endpoint availability records, a runtime lock, and other freeze inputs. I have not started confirmatory collection under v8.6.3.
-
-I added the 27 September provenance files without replacing the frozen specification, analysis, or item pool.
-
-## My prospective v9 records
-
-I keep my prospective runner, receipts, and accountability ledger under [`research/v9_0_prospective/`](research/v9_0_prospective/). I verified `items_pool_v1.json` at 75,875 bytes with SHA-256 `128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3`; I do not track or modify the pool in Git.
-
-I have five documented Pilot B executions: 317 HTTP calls and USD 0.01926445 estimated spend in total. Run 5 passed all four tested slots across TR_01–TR_05. I also have one 50-item Pilot A execution: 540 HTTP 200 calls, zero retries, USD 0.04127526 estimated spend, and 405 successful item-stage pairs across TR_01–TR_40. Its four model slots completed 39, 30, 9, and 2 full item pipelines, so its model coverage was partial.
-
-I have one **partial OpenRouter confirmatory execution**. Its archived receipt records 180 pipeline call responses (176 HTTP 200 and four HTTP 402), USD 0.01704482 estimated spend, and USD 0.10182801 reserved against the USD 1.25 cap. Qwen completed TR_01–TR_27 and three stages on TR_28: 138 successful stage pairs total, of which 135 belong to the 27 complete items. The other three slots completed no item pipeline. The receipt JSON says `stopped_early=false` and `halt_reason=null`; its ledger shows the first 402 at Qwen/TR_28/Phase 1 followed by three additional 402 calls at Phase 0 for the other slots. I preserve the receipt as received and have added fail-fast handling for future runs. This is one partial confirmatory run, and the receipt marks `confirmatory_data_collected=true`.
-
-The ZIP also contains four separate engineering connectivity probes, all HTTP 200. I count these as non-study probes, not confirmatory pipeline calls. Across all archived DesignLab evidence I count 30 engineering POST probes (28 HTTP 200, one HTTP 400, one HTTP 404), 317 Pilot B calls (316 HTTP 200, one HTTP 401), 540 Pilot A calls, and 180 confirmatory pipeline calls (176 HTTP 200, four HTTP 402): **1,067 documented POST requests**. Their combined status totals are 1,060 HTTP 200, one HTTP 400, one HTTP 401, one HTTP 404, and four HTTP 402. Three provider catalog metadata GETs bring the saved DesignLab request count to 1,070. These are local receipt counts, not provider billing logs; activity outside preserved records cannot be excluded. My PSI repository has one live run, but its files do not establish an exact external API request count. Across DesignLab and PSI I can document ten live experimental executions across five Pilot B runs, one Pilot A run, one partial OpenRouter confirmatory run, two local-HF slot executions, and one PSI run.
-
-The budget screenshot shows a USD 50 weekly API-key limit, USD 0.20 used, and USD 49.80 remaining. The local confirmatory cap remains USD 1.25, so the effective cap is the lower USD 1.25. The user-reported USD 0.2005 provider balance that coincided with the 402 response is a separate credit boundary and was not independently queried. My resume path verifies the pool and prior complete item-stage records, skips completed item pairs, and charges prior reservations against the same USD 1.25 aggregate cap. The first run reserved USD 0.10182801, leaving USD 1.14817199 of reservation headroom under that cap. A weekly key limit does not restore provider wallet credit.
-
-I keep the partial confirmatory receipt in [`research/v9_0_prospective/confirmatory_receipts/`](research/v9_0_prospective/confirmatory_receipts/) and current totals in [`research/v9_0_prospective/provenance_2026_11_26/run_count_summary.json`](research/v9_0_prospective/provenance_2026_11_26/run_count_summary.json). I sent no provider requests and read or logged no API key while making this update. My frozen v8.6.3 files and `items_pool_v1.json` remain unchanged.
-
-I have also prepared a separate local-HF v9 confirmatory variant for four open-weight model families. It has a single-cell Colab T4 notebook and setup scripts for my existing Debian GCE VM; the GCE setup stops unless it detects a CUDA GPU with at least 14 GiB VRAM. Both paths use no inference API keys, report USD 0.00 inference API spend, and save per-item checkpoints. It is a distinct v9 model and backend variant, not a run of my frozen v8.6.3 protocol; I will preserve that boundary in any report.
-
-## How I use this repository
-
-I use OSF for the archival source record and this repository as my readable, version-controlled technical mirror. I keep each result tied to its method, scope, source revision, and recorded limitations.
+I archive successive checkpoints so readers can trace each run as it progresses. [Checkpoint archive](research/v9_0_prospective/confirmatory_receipts/)
 
 **Rights boundary — effective 1 October 2026:** I reserve new author-owned original material first published here from this date. Earlier express licenses remain in force for the material they cover. I follow [my rights policy](RIGHTS_POLICY_2026_10_01.md) and [my portfolio evidence standard](https://github.com/reggaesharkk/Reggae-shark-universe-/blob/main/PORTFOLIO_EVIDENCE_AND_RIGHTS_STANDARD_2026_10_01.md).
