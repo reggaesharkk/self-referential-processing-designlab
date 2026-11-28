@@ -4,14 +4,16 @@ I keep my connectivity check, Pilot B and Pilot A runners, confirmatory runner, 
 
 ## My local GPU progress on 28 November 2026
 
-I have processed 420 of 1,040 planned model/item pairs across four families. My checkpoints record 374 complete pipelines, 46 style-scrub skips, zero failed items, and 2,804 local generations at USD 0.00 external inference spend.
+I have processed 513 of 1,040 planned model/item pairs across four families. My checkpoints record 454 complete pipelines, 53 style-scrub skips, 6 failed items, and 3,368 local generations at USD 0.00 external inference spend.
 
 | Tested family | Processed | Complete | Skipped | Remaining | Generations |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Qwen 7B | 260 | 246 | 14 | 0 | 1,726 |
 | Gemma 9B | 160 | 128 | 32 | 100 | 1,078 |
 | Llama 8B | 0 | 0 | 0 | 260 | 0 |
-| Mistral 7B | 0 | 0 | 0 | 260 | 0 |
+| Mistral 7B | 93 | 80 | 7 | 167 | 564 |
+
+I processed 35.8% of the Mistral pool through BE_41. Six additional processed items stopped with failed_closed status. [My Mistral T4 checkpoint](confirmatory_receipts/2026-11-28_local_hf_mistral_7b_part2/confirmatory_local_hf_mistral_7b.json)
 
 I reached 61.5% of the Gemma pool on a Tesla T4. I processed all 52 TR, BE, and DP items and EP_01 through EP_04, including a style-scrub skip on EP_02. I verified that the first 135 item records and 904 generations match my earlier Gemma checkpoint. [Gemma part 2 and SHA-256 manifest](confirmatory_receipts/2026-11-28_local_hf_gemma_9b_part2/)
 
@@ -58,7 +60,7 @@ I completed one 50-item Pilot A execution: 540 HTTP 200 responses, zero retries,
 
 I have one partial OpenRouter confirmatory execution. Its preserved ZIP measures SHA-256 `3c95c500177a6960a791eaa2633e96ac7c0a270abefa2956a549faf92b6d9f3c`; its result JSON hash is `d83caec7364395005fd1fc5fd1ac61332cbd650c5cb74b3e322a2a205955fa7f`. It records 180 responses (176 HTTP 200, four HTTP 402), USD 0.01704482 estimated spend, and USD 0.10182801 reserved. Qwen completed 27 items and three stages on TR_28 (138 successful stage pairs); the other slots completed no items. The result marks `confirmatory_data_collected=true`. I count this as one partial confirmatory run, not a completed 260-item run.
 
-The attached ZIP also contains four separate HTTP 200 connectivity probes. Across all local DesignLab receipts I count 30 engineering POST probes, 317 Pilot B requests (316 HTTP 200, one HTTP 401), 540 Pilot A requests, and 180 confirmatory requests (176 HTTP 200, four HTTP 402), or 1,067 documented POST requests. Across all POSTs, I count 1,060 HTTP 200, one HTTP 400, one HTTP 401, one HTTP 404, and four HTTP 402. Three catalog GETs make 1,070 saved DesignLab HTTP requests. I do not have provider-side billing logs, so this is a count of preserved records. My PSI repository provides one live run but no exact external API-call count. Across DesignLab and PSI, I can document ten live experimental executions across five Pilot B runs, one Pilot A run, one partial OpenRouter confirmatory run, two local-HF slot executions, and one PSI run.
+The attached ZIP also contains four separate HTTP 200 connectivity probes. Across all local DesignLab receipts I count 30 engineering POST probes, 317 Pilot B requests (316 HTTP 200, one HTTP 401), 540 Pilot A requests, and 180 confirmatory requests (176 HTTP 200, four HTTP 402), or 1,067 documented POST requests. Across all POSTs, I count 1,060 HTTP 200, one HTTP 400, one HTTP 401, one HTTP 404, and four HTTP 402. Three catalog GETs make 1,070 saved DesignLab HTTP requests. I do not have provider-side billing logs, so this is a count of preserved records. My PSI repository provides one live run but no exact external API-call count. Across DesignLab and PSI, I can document eleven live experimental executions across five Pilot B runs, one Pilot A run, one partial OpenRouter confirmatory run, three local-HF slot executions, and one PSI run.
 
 I keep my partial receipt, source ZIP, extracted result files, reconciliation, and manifests under `confirmatory_receipts/2026-11-26_run_1_partial_402/`. The current cumulative counts are in `provenance_2026_11_26/run_count_summary.json`.
 

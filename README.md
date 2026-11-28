@@ -22,14 +22,16 @@ I recorded five Pilot B runs, one 50-item Pilot A run, and one partial OpenRoute
 
 ### Local GPU checkpoints · 28 November 2026
 
-I plan to process the same 260 items with each of four model families. So far I have processed **420 of 1,040 model/item pairs**. Of those, 374 completed all five stages and 46 were skipped after the neutral rewrite missed the 45–55 word window. I recorded 2,804 local generations and USD 0.00 in external inference spend.
+I plan to process the same 260 items with each of four model families. So far I have processed **513 of 1,040 model/item pairs**. Of those, 454 completed all five stages, 6 failed closed, and 53 were skipped after the neutral rewrite missed the 45–55 word window. I recorded 3,368 local generations and USD 0.00 in external inference spend.
 
 | Tested family | Processed | Complete | Skipped | Remaining | Generations |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Qwen 7B | 260 | 246 | 14 | 0 | 1,726 |
 | Gemma 9B | 160 | 128 | 32 | 100 | 1,078 |
 | Llama 8B | 0 | 0 | 0 | 260 | 0 |
-| Mistral 7B | 0 | 0 | 0 | 260 | 0 |
+| Mistral 7B | 93 | 80 | 7 | 167 | 564 |
+
+I processed 35.8% of the Mistral pool through BE_41. Six additional processed items stopped with failed_closed status. [My Mistral T4 checkpoint](research/v9_0_prospective/confirmatory_receipts/2026-11-28_local_hf_mistral_7b_part2/confirmatory_local_hf_mistral_7b.json)
 
 I archive successive checkpoints so readers can trace each run as it progresses. [Checkpoint archive](research/v9_0_prospective/confirmatory_receipts/)
 
