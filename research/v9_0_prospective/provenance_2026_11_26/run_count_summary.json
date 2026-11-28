@@ -689,7 +689,7 @@
     "status": "in_progress",
     "live_runs_evidenced": 2,
     "gpu_execution_attempts": 2,
-    "completed_items": 352,
+    "completed_items": 374,
     "external_inference_api_requests": 0,
     "model_inference_api_spend_usd": 0.0,
     "offline_validation": "24 repository tests passed; verified-pool local-hf dry run; one-cell notebook syntax checked; GCE VM bundle prepared but not executed",
@@ -697,13 +697,13 @@
     "protocol_variant": "v9-local-hf-4bit-four-family",
     "scope_note": "Distinct prospective model/backend variant; not an execution of frozen v8.6.3 and not evidence that the 260-item run is complete.",
     "gce_vm_target": "existing Debian x86_64 VM; GPU presence not established by supplied terminal screenshot",
-    "processed_items": 395,
-    "skipped_items": 43,
+    "processed_items": 420,
+    "skipped_items": 46,
     "failed_items": 0,
-    "remaining_unprocessed_items": 645,
-    "local_generation_calls": 2630,
+    "remaining_unprocessed_items": 620,
+    "local_generation_calls": 2804,
     "gpu": "Tesla T4",
-    "updated_utc": "2026-11-27T17:03:56.903639+00:00",
+    "updated_utc": "2026-11-28T11:43:04.053382+00:00",
     "checkpoint_history": [
       {
         "path": "research/v9_0_prospective/confirmatory_receipts/2026-11-26_local_hf_qwen_7b_part1/confirmatory_local_hf_qwen_7b.json",
@@ -807,6 +807,50 @@
           "DP_13",
           "DP_28"
         ]
+      },
+      {
+        "path": "research/v9_0_prospective/confirmatory_receipts/2026-11-28_local_hf_gemma_9b_part2/confirmatory_local_hf_gemma_9b.json",
+        "sha256": "8b2c01d20844b6b0d185a3bc6bb9ccb082ae42e53c25c607501b20a3277f9fda",
+        "updated_utc": "2026-11-28T11:43:04.053382+00:00",
+        "processed_items": 160,
+        "completed_items": 128,
+        "skipped_items": 32,
+        "failed_items": 0,
+        "local_generation_calls": 1078,
+        "skipped_item_ids": [
+          "TR_07",
+          "TR_12",
+          "TR_18",
+          "TR_19",
+          "TR_21",
+          "TR_25",
+          "TR_26",
+          "TR_28",
+          "TR_33",
+          "TR_39",
+          "TR_41",
+          "TR_47",
+          "TR_51",
+          "TR_52",
+          "BE_06",
+          "BE_08",
+          "BE_13",
+          "BE_18",
+          "BE_21",
+          "BE_33",
+          "BE_36",
+          "BE_38",
+          "BE_49",
+          "BE_51",
+          "DP_02",
+          "DP_04",
+          "DP_09",
+          "DP_13",
+          "DP_28",
+          "DP_34",
+          "DP_35",
+          "EP_02"
+        ]
       }
     ],
     "slots": {
@@ -837,14 +881,14 @@
         ]
       },
       "gemma_9b": {
-        "path": "research/v9_0_prospective/confirmatory_receipts/2026-11-27_local_hf_gemma_9b_part1/confirmatory_local_hf_gemma_9b.json",
-        "sha256": "9d70c99fa7eb5e2c088e5fb03e877e2d8173d8bf75084a0233a6a22fea00750b",
-        "updated_utc": "2026-11-27T17:03:56.903639+00:00",
-        "processed_items": 135,
-        "completed_items": 106,
-        "skipped_items": 29,
+        "path": "research/v9_0_prospective/confirmatory_receipts/2026-11-28_local_hf_gemma_9b_part2/confirmatory_local_hf_gemma_9b.json",
+        "sha256": "8b2c01d20844b6b0d185a3bc6bb9ccb082ae42e53c25c607501b20a3277f9fda",
+        "updated_utc": "2026-11-28T11:43:04.053382+00:00",
+        "processed_items": 160,
+        "completed_items": 128,
+        "skipped_items": 32,
         "failed_items": 0,
-        "local_generation_calls": 904,
+        "local_generation_calls": 1078,
         "skipped_item_ids": [
           "TR_07",
           "TR_12",
@@ -874,7 +918,10 @@
           "DP_04",
           "DP_09",
           "DP_13",
-          "DP_28"
+          "DP_28",
+          "DP_34",
+          "DP_35",
+          "EP_02"
         ]
       }
     }

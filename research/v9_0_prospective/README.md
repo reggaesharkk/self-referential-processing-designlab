@@ -2,6 +2,19 @@
 
 I keep my connectivity check, Pilot B and Pilot A runners, confirmatory runner, rate card, Colab notebook, receipts, and run ledger here. I made these additions without changing the frozen v8.6.3 files or `items_pool_v1.json`. My entrypoints default to offline dry runs. My Colab notebook reads `OPENROUTER_API_KEY` from Colab Secrets without printing it, runs connectivity checks first, and only starts the confirmatory pipeline if all four slots pass.
 
+## My local GPU progress on 28 November 2026
+
+I have processed 420 of 1,040 planned model/item pairs across four families. My checkpoints record 374 complete pipelines, 46 style-scrub skips, zero failed items, and 2,804 local generations at USD 0.00 external inference spend.
+
+| Tested family | Processed | Complete | Skipped | Remaining | Generations |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen 7B | 260 | 246 | 14 | 0 | 1,726 |
+| Gemma 9B | 160 | 128 | 32 | 100 | 1,078 |
+| Llama 8B | 0 | 0 | 0 | 260 | 0 |
+| Mistral 7B | 0 | 0 | 0 | 260 | 0 |
+
+I reached 61.5% of the Gemma pool on a Tesla T4. I processed all 52 TR, BE, and DP items and EP_01 through EP_04, including a style-scrub skip on EP_02. I verified that the first 135 item records and 904 generations match my earlier Gemma checkpoint. [Gemma part 2 and SHA-256 manifest](confirmatory_receipts/2026-11-28_local_hf_gemma_9b_part2/)
+
 ## My verified pool and budget
 
 Before a run, `pilot_b_v9.py` verifies the 260-item `items_pool_v1.json` file at SHA-256 `128ff78bb6beb1640fa51897ab97dbb9d07dc56de276973d05a48dda524b53d3`. I verified its size as 75,875 bytes. I include it in Colab bundles and keep it outside Git.
@@ -43,7 +56,7 @@ I have five Pilot B receipts with 317 pipeline calls and USD 0.01926445 estimate
 
 I completed one 50-item Pilot A execution: 540 HTTP 200 responses, zero retries, and USD 0.04127526 estimated spend against the USD 0.50 cap. It records 405 successful item-stage pairs over TR_01–TR_40: 80 full five-stage item pipelines and five additional partial stages. Qwen completed 39 item pipelines, Llama 30, Gemma 9, and Mistral 2. I count its four connectivity probes separately.
 
-I have one partial prospective confirmatory execution. Its preserved ZIP measures SHA-256 `3c95c500177a6960a791eaa2633e96ac7c0a270abefa2956a549faf92b6d9f3c`; its result JSON hash is `d83caec7364395005fd1fc5fd1ac61332cbd650c5cb74b3e322a2a205955fa7f`. It records 180 responses (176 HTTP 200, four HTTP 402), USD 0.01704482 estimated spend, and USD 0.10182801 reserved. Qwen completed 27 items and three stages on TR_28 (138 successful stage pairs); the other slots completed no items. The result marks `confirmatory_data_collected=true`. I count this as one partial confirmatory run, not a completed 260-item run.
+I have one partial OpenRouter confirmatory execution. Its preserved ZIP measures SHA-256 `3c95c500177a6960a791eaa2633e96ac7c0a270abefa2956a549faf92b6d9f3c`; its result JSON hash is `d83caec7364395005fd1fc5fd1ac61332cbd650c5cb74b3e322a2a205955fa7f`. It records 180 responses (176 HTTP 200, four HTTP 402), USD 0.01704482 estimated spend, and USD 0.10182801 reserved. Qwen completed 27 items and three stages on TR_28 (138 successful stage pairs); the other slots completed no items. The result marks `confirmatory_data_collected=true`. I count this as one partial confirmatory run, not a completed 260-item run.
 
 The attached ZIP also contains four separate HTTP 200 connectivity probes. Across all local DesignLab receipts I count 30 engineering POST probes, 317 Pilot B requests (316 HTTP 200, one HTTP 401), 540 Pilot A requests, and 180 confirmatory requests (176 HTTP 200, four HTTP 402), or 1,067 documented POST requests. Across all POSTs, I count 1,060 HTTP 200, one HTTP 400, one HTTP 401, one HTTP 404, and four HTTP 402. Three catalog GETs make 1,070 saved DesignLab HTTP requests. I do not have provider-side billing logs, so this is a count of preserved records. My PSI repository provides one live run but no exact external API-call count. Across DesignLab and PSI, I can document ten live experimental executions across five Pilot B runs, one Pilot A run, one partial OpenRouter confirmatory run, two local-HF slot executions, and one PSI run.
 
@@ -80,6 +93,6 @@ Before collecting any further confirmatory local-HF observations or conducting c
 
 For any confirmatory extension under the amendment, I will freeze and hash all slot checkpoints, call ledgers, missingness summaries, analysis code, and the final item-pool verification before outcome unblinding. A designated data custodian will keep the model-to-blind-slot mapping separate from the analyst. The run operator may see model identity for loading and technical diagnostics, while comparative item-level outcomes and family summaries remain masked until the freeze is recorded. I will log the unblinding date, responsible person, and mapping version, and retain the pre-unblinding artifacts unchanged.
 
-I have prepared this as a distinct v9 local-HF protocol variant. My GCE setup first checks nvidia-smi and the 14 GiB threshold, before it creates a Python environment or downloads libraries. I processed all 260 Qwen items (246 complete, 14 skipped) and 135 Gemma items (106 complete, 29 skipped, 125 pending). I recorded 1,726 Qwen-slot and 904 Gemma-slot local generations, zero failed items, and USD 0.00 in external inference spend.  I do not treat this variant as an execution of frozen v8.6.3; any claim that it confirms that registered protocol requires a protocol amendment and matching registration.
+I have prepared this as a distinct v9 local-HF protocol variant. My GCE setup first checks nvidia-smi and the 14 GiB threshold, before it creates a Python environment or downloads libraries. I do not treat this variant as an execution of frozen v8.6.3; any claim that it confirms that registered protocol requires a protocol amendment and matching registration.
 
 I use `MANIFEST_SHA256.txt` to verify my listed source files; it does not hash itself. I keep receipt manifests next to each archived source. I have not modified any frozen v8.6.3 file or the item pool.
